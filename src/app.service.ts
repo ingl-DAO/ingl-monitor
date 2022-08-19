@@ -77,10 +77,10 @@ export class AppService {
         oldData.vote_account_key !== vote_account_key.toString()
       ) {
         this.logger.log('New Vote Account');
-        await broadcastEvent(
-          'New Ingl Vote Account Created',
-          `A new vote account has been created. Please delegate your NFT and receive voting rewards.  https://app.ingl.io/nft`
-        );
+        // await broadcastEvent(
+        //   'New Ingl Vote Account Created',
+        //   `A new vote account has been created. Please delegate your NFT and receive voting rewards.  https://app.ingl.io/nft`
+        // );
         fs.writeFileSync(
           DATA_PATH,
           JSON.stringify({
@@ -91,10 +91,10 @@ export class AppService {
       }
       if (current_proposal_numeration > oldData.proposal_numeration) {
         this.logger.log('New Proposal');
-        await broadcastEvent(
-          'New Validator Selection Proposal',
-          `A new validator selection proposal has been created. Please vote on the best suited validator at https://app.ingl.io/dao`
-        );
+        // await broadcastEvent(
+        //   'New Validator Selection Proposal',
+        //   `A new validator selection proposal has been created. Please vote on the best suited validator at https://app.ingl.io/dao`
+        // );
         fs.writeFileSync(
           DATA_PATH,
           JSON.stringify({
@@ -121,10 +121,10 @@ export class AppService {
         );
         if (date_finalized !== oldData.date_finalized) {
           this.logger.log('Proposal Finalized');
-          await broadcastEvent(
-            'Ingl Proposal Finalized',
-            `A proposal has been finalized. Get ready to delegate once a vote account is created. https://app.ingl.io/nft`
-          );
+          // await broadcastEvent(
+          //   'Ingl Proposal Finalized',
+          //   `A proposal has been finalized. Get ready to delegate once a vote account is created. https://app.ingl.io/nft`
+          // );
           fs.writeFileSync(
             DATA_PATH,
             JSON.stringify({
