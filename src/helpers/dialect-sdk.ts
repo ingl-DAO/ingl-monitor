@@ -10,10 +10,11 @@ import {
   Dapp,
 } from '@dialectlabs/sdk';
 import { Keypair } from '@solana/web3.js';
+import { CONNECTION_URL } from './state';
 
 export function createSdk(): DialectSdk {
   const keypair = Buffer.from(
-    JSON.parse(process.env['DIALECT_KEYPAIR'] as string),
+    JSON.parse(process.env['DIALECT_KEYPAIR'] as string)
   );
   const secretKey = Keypair.fromSecretKey(keypair);
 
@@ -25,11 +26,11 @@ export function createSdk(): DialectSdk {
   const environment = 'production';
   const encryptionKeysStore = EncryptionKeysStore.createInMemory();
   const solana = {
-    rpcUrl: 'https://api.devnet.solana.com',
+    rpcUrl: CONNECTION_URL,
   };
   // const keypair = Keypair.fromSecretKey(secretKey);
   const wallet = DialectWalletAdapterWrapper.create(
-    NodeDialectWalletAdapter.create(secretKey),
+    NodeDialectWalletAdapter.create(secretKey)
   );
 
   const sdk: DialectSdk = Dialect.sdk({
@@ -49,7 +50,7 @@ export async function createDapp(): Promise<Dapp> {
   let dapp = await sdk.dapps.find();
   if (!dapp) {
     dapp = await sdk.dapps.create({
-      name: 'Ingl Dapp',
+      name: 'Ingl-DAO',
       description: 'Ingl events notifications dapp',
     });
   }
