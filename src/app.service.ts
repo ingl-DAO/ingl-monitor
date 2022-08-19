@@ -14,6 +14,7 @@ import * as fs from 'fs';
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Connection, PublicKey } from '@solana/web3.js';
+import { HttpService } from '@nestjs/axios';
 
 const DATA_PATH = './monitor-data.json';
 
@@ -29,8 +30,9 @@ export const toBytesInt32 = (num: number) => {
 
 @Injectable()
 export class AppService {
-  private readonly logger = new Logger(AppService.name);
   private connection = new Connection(CONNECTION_URL);
+  private readonly logger = new Logger(AppService.name);
+  constructor(private readonly httpService: HttpService) {}
 
   getData(): { message: string } {
     return { message: 'Welcome to Ingl monitor!' };
@@ -40,6 +42,12 @@ export class AppService {
   async broadcast() {
     try {
       this.logger.log('Broadcasting....');
+      this.httpService.axiosRef
+        .get('https://ingl-dao.herokuapp.com/')
+        .then(({ data }) => {
+          this.logger.log(data.message);
+        });
+
       const [global_gem_pubkey] = PublicKey.findProgramAddressSync(
         [Buffer.from(GLOBAL_GEM_KEY)],
         INGL_PROGRAM_ID
