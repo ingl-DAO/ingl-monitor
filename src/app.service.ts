@@ -67,21 +67,20 @@ export class AppService {
         ingl_vote_data_key
       );
       const dataString = fs.readFileSync(DATA_PATH);
-      let oldData: {
+      const oldData: {
         vote_account_key: string;
         proposal_numeration: number;
         date_finalized: number;
       } = JSON.parse(dataString.toString());
-      console.log('Before', oldData);
       if (
         inglVoteDataAccount?.owner.toString() === INGL_PROGRAM_ID.toString() &&
         oldData.vote_account_key !== vote_account_key.toString()
       ) {
         this.logger.log('New Vote Account');
-        await broadcastEvent(
-          'New Ingl Vote Account Created',
-          `A new vote account has been created. Please delegate your NFT and receive voting rewards.  https://app.ingl.io/nft`
-        );
+        // await broadcastEvent(
+        //   'New Ingl Vote Account Created',
+        //   `A new vote account has been created. Please delegate your NFT and receive voting rewards.  https://app.ingl.io/nft`
+        // );
         fs.writeFileSync(
           DATA_PATH,
           JSON.stringify({
@@ -92,10 +91,10 @@ export class AppService {
       }
       if (current_proposal_numeration > oldData.proposal_numeration) {
         this.logger.log('New Proposal');
-        await broadcastEvent(
-          'New Validator Selection Proposal',
-          `A new validator selection proposal has been created. Please vote on the best suited validator at https://app.ingl.io/dao`
-        );
+        // await broadcastEvent(
+        //   'New Validator Selection Proposal',
+        //   `A new validator selection proposal has been created. Please vote on the best suited validator at https://app.ingl.io/dao`
+        // );
         fs.writeFileSync(
           DATA_PATH,
           JSON.stringify({
@@ -116,17 +115,16 @@ export class AppService {
         proposal_pubkey
       );
       if (proposalAccountInfo) {
-        this.logger.log('Proposal Account Info');
         const { date_finalized } = deserializeUnchecked(
           ValidatorProposal,
           proposalAccountInfo.data
         );
-        if (date_finalized && date_finalized !== oldData.date_finalized) {
+        if (date_finalized !== oldData.date_finalized) {
           this.logger.log('Proposal Finalized');
-          await broadcastEvent(
-            'Ingl Proposal Finalized',
-            `A proposal has been finalized. Get ready to delegate once a vote account is created. https://app.ingl.io/nft`
-          );
+          // await broadcastEvent(
+          //   'Ingl Proposal Finalized',
+          //   `A proposal has been finalized. Get ready to delegate once a vote account is created. https://app.ingl.io/nft`
+          // );
           fs.writeFileSync(
             DATA_PATH,
             JSON.stringify({
@@ -136,8 +134,6 @@ export class AppService {
           );
         }
       }
-      oldData = JSON.parse(dataString.toString());
-      console.log('After', oldData);
     } catch (err) {
       this.logger.error(err);
     }
