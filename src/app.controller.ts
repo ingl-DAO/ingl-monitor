@@ -7,16 +7,6 @@ import { MongoService } from './services/mongo.service';
 import { DialectService } from './services/dialect.service';
 import { INGL_PROGRAM_ID, ValidatorProposal } from './helpers/state';
 
-export const toBytesInt32 = (num: number) => {
-  const arr = new Uint8Array([
-    (num & 0xff000000) >> 24,
-    (num & 0x00ff0000) >> 16,
-    (num & 0x0000ff00) >> 8,
-    num & 0x000000ff,
-  ]);
-  return arr;
-};
-
 @Controller()
 export class AppController {
   private readonly logger = new Logger(AppController.name);
