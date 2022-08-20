@@ -5,10 +5,12 @@ import { ScheduleModule } from '@nestjs/schedule';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { DialectService } from './services/dialect.service';
+import { MongoService } from './services/mongo.service';
 
 @Module({
-  imports: [ConfigModule.forRoot(), ScheduleModule.forRoot(), HttpModule],
+  imports: [HttpModule, ConfigModule.forRoot(), ScheduleModule.forRoot()],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, MongoService, DialectService],
 })
 export class AppModule {}
