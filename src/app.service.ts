@@ -5,16 +5,12 @@ import {
   GLOBAL_GEM_KEY,
   INGL_PROGRAM_ID,
   PROPOSAL_KEY,
-  ValidatorProposal,
   VOTE_ACCOUNT_KEY,
   VOTE_DATA_ACCOUNT_KEY,
 } from './helpers/state';
 import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { Connection, PublicKey } from '@solana/web3.js';
-import { MongoService } from './services/mongo.service';
-import { DialectService } from './services/dialect.service';
 
 export const toBytesInt32 = (num: number) => {
   const arr = new Uint8Array([
@@ -30,18 +26,13 @@ export const toBytesInt32 = (num: number) => {
 export class AppService {
   private connection = new Connection(CONNECTION_URL);
   private readonly logger = new Logger(AppService.name);
-  constructor(
-    private readonly httpService: HttpService,
-    private mongoService: MongoService,
-    private dialectService: DialectService
-  ) {}
+  constructor(private readonly httpService: HttpService) {}
 
   getData(): { message: string } {
     return { message: 'Welcome to Ingl monitor!' };
   }
 
-  @Cron(CronExpression.EVERY_5_SECONDS)
-  async broadcast() {
+  async getInglState() {
     try {
       this.logger.log('Broadcasting....');
       this.httpService.axiosRef
@@ -76,38 +67,6 @@ export class AppService {
       const inglVoteDataAccount = await this.connection.getAccountInfo(
         ingl_vote_data_key
       );
-      const mongoData = await this.mongoService.findOne();
-      if (
-        inglVoteDataAccount?.owner.toString() === INGL_PROGRAM_ID.toString() &&
-        mongoData.vote_account_key !== vote_account_key.toString()
-      ) {
-        this.logger.log('New Vote Account', {
-          mongoData,
-          inglVoteDataAccount,
-        });
-        await this.dialectService.broadcast(
-          'New Ingl Vote Account Created',
-          `A new vote account has been created. Please delegate your NFT and receive voting rewards.  https://app.ingl.io/nft`
-        );
-        await this.mongoService.update({
-          ...mongoData,
-          vote_account_key: vote_account_key.toString(),
-        });
-      }
-      if (current_proposal_numeration > mongoData.proposal_numeration) {
-        this.logger.log('New Proposal', {
-          oldData: mongoData,
-          current_proposal_numeration,
-        });
-        await this.dialectService.broadcast(
-          'New Validator Selection Proposal',
-          `A new validator selection proposal has been created. Please vote on the best suited validator at https://app.ingl.io/dao`
-        );
-        await this.mongoService.update({
-          ...mongoData,
-          proposal_numeration: current_proposal_numeration,
-        });
-      }
 
       const [proposal_pubkey] = PublicKey.findProgramAddressSync(
         [
@@ -119,26 +78,13 @@ export class AppService {
       const proposalAccountInfo = await this.connection.getAccountInfo(
         proposal_pubkey
       );
-      if (proposalAccountInfo) {
-        const { date_finalized } = deserializeUnchecked(
-          ValidatorProposal,
-          proposalAccountInfo.data
-        );
-        if (date_finalized !== mongoData.date_finalized) {
-          this.logger.log('Proposal Finalized', {
-            date_finalized,
-            mongoData,
-          });
-          await this.dialectService.broadcast(
-            'Ingl Proposal Finalized',
-            `A proposal has been finalized. Get ready to delegate once a vote account is created. https://app.ingl.io/nft`
-          );
-          await this.mongoService.update({
-            ...mongoData,
-            date_finalized,
-          });
-        }
-      }
+
+      return {
+        inglVoteDataAccount,
+        proposalAccountInfo,
+        current_proposal_numeration,
+        vote_account_key: vote_account_key.toString(),
+      };
     } catch (err) {
       this.logger.error(err);
     }
