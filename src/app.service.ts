@@ -8,7 +8,6 @@ import {
   VOTE_ACCOUNT_KEY,
   VOTE_DATA_ACCOUNT_KEY,
 } from './helpers/state';
-import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { Connection, PublicKey } from '@solana/web3.js';
 
@@ -26,7 +25,6 @@ export const toBytesInt32 = (num: number) => {
 export class AppService {
   private connection = new Connection(CONNECTION_URL);
   private readonly logger = new Logger(AppService.name);
-  constructor(private readonly httpService: HttpService) {}
 
   getData(): { message: string } {
     return { message: 'Welcome to Ingl monitor!' };
@@ -34,13 +32,6 @@ export class AppService {
 
   async getInglState() {
     try {
-      this.logger.log('Broadcasting....');
-      this.httpService.axiosRef
-        .get('https://ingl-dao.herokuapp.com/')
-        .then(({ data }) => {
-          this.logger.log(data.message);
-        });
-
       const [global_gem_pubkey] = PublicKey.findProgramAddressSync(
         [Buffer.from(GLOBAL_GEM_KEY)],
         INGL_PROGRAM_ID
