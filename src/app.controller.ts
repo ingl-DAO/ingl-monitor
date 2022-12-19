@@ -1,11 +1,10 @@
-import { AppService } from './app.service';
-import { HttpService } from '@nestjs/axios';
 import { deserializeUnchecked } from '@dao-xyz/borsh';
 import { Controller, Get, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { MongoService } from './services/mongo.service';
-import { DialectService } from './services/dialect.service';
+import { AppService } from './app.service';
 import { INGL_PROGRAM_ID, ValidatorProposal } from './helpers/state';
+import { DialectService } from './services/dialect.service';
+import { MongoService } from './services/monitor.service';
 
 @Controller()
 export class AppController {
@@ -13,8 +12,7 @@ export class AppController {
 
   constructor(
     private readonly appService: AppService,
-    private readonly httpService: HttpService,
-    private readonly mongoService: MongoService,
+    private readonly monitorService: MongoService,
     private readonly dialectService: DialectService
   ) {}
 
@@ -32,7 +30,7 @@ export class AppController {
         inglVoteDataAccount,
         proposalAccountInfo,
       } = await this.appService.getInglState();
-      const mongoData = await this.mongoService.findOne();
+      const mongoData = await this.monitorService.findOne();
 
       if (
         inglVoteDataAccount?.owner.toString() === INGL_PROGRAM_ID.toString() &&
@@ -46,7 +44,7 @@ export class AppController {
           'New Ingl Vote Account Created',
           `A new vote account has been created. Please delegate your NFT and receive voting rewards.  https://app.ingl.io/nft`
         );
-        await this.mongoService.update({
+        await this.monitorService.update({
           ...mongoData,
           vote_account_key: vote_account_key.toString(),
         });
@@ -60,7 +58,7 @@ export class AppController {
           'New Validator Selection Proposal',
           `A new validator selection proposal has been created. Please vote on the best suited validator at https://app.ingl.io/dao`
         );
-        await this.mongoService.update({
+        await this.monitorService.update({
           ...mongoData,
           proposal_numeration: current_proposal_numeration,
         });
@@ -80,7 +78,7 @@ export class AppController {
             'Ingl Proposal Finalized',
             `A proposal has been finalized. Get ready to delegate once a vote account is created. https://app.ingl.io/nft`
           );
-          await this.mongoService.update({
+          await this.monitorService.update({
             ...mongoData,
             date_finalized,
           });
