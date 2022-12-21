@@ -1,4 +1,4 @@
-import { IsBoolean, IsEmail, IsString } from 'class-validator';
+import { IsEmail, IsString } from 'class-validator';
 import { ObjectId } from 'mongodb';
 
 export class UserPostDto {
@@ -7,14 +7,20 @@ export class UserPostDto {
 
   @IsString()
   fullname: string;
+}
 
-  @IsBoolean()
-  is_admin: string;
+export class ResetPassword {
+  reset_link: string;
+  is_used: boolean;
+  created_at: string;
 }
 
 export class User extends UserPostDto {
   _id: ObjectId;
   password: string;
+  is_admin: boolean;
+  created_at: string;
+  resetPassword: ResetPassword;
 }
 
 export enum CollectionName {

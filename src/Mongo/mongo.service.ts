@@ -20,7 +20,10 @@ export const MongoDB = {
 export class MongoService {
   constructor(@Inject('MONGO_DB') private db: Db) {}
 
-  async insert(collectionName: string, data: Record<string, string | number>) {
+  async insert(
+    collectionName: string,
+    data: Record<string, string | number | object | boolean>
+  ) {
     await this.db.command({ ping: 1 });
     const collection = this.db.collection(collectionName);
     return collection.insertOne(data);

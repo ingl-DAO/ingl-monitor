@@ -1,4 +1,12 @@
-import { Controller, Get, Post, SetMetadata, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  SetMetadata,
+  UseGuards,
+} from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { JwtAuthGuard } from 'src/Auth/jwt/jwt-auth.guard';
 import { CollectionName, User, UserPostDto } from 'src/Mongo/mongo.dto';
 import { MongoService } from 'src/Mongo/mongo.service';
@@ -21,7 +29,18 @@ export class UserController {
 
   @Post('new')
   @SetMetadata('isAdmin', true)
-  async addNewUser(newUser: UserPostDto) {
+  async addNewUser(@Body() user: UserPostDto) {
+    const newUser: Omit<User, '_id'> = {
+      ...user,
+      password: null,
+      is_admin: false,
+      created_at: new Date().toISOString(),
+      resetPassword: {
+        is_used: false,
+        reset_link: randomUUID(),
+        created_at: new Date().toISOString(),
+      },
+    };
     return this.mongoService.insert(CollectionName.BetaUsers, { ...newUser });
   }
 }
