@@ -1,3 +1,4 @@
+import { Inject, Injectable } from '@nestjs/common/decorators';
 import { MongoClient } from 'mongodb';
 
 export interface MonitorData {
@@ -6,8 +7,9 @@ export interface MonitorData {
   date_finalized: number;
 }
 
+@Injectable()
 export class MongoService {
-  private client = new MongoClient(process.env.MONGO_URI);
+  constructor(@Inject('MONGO_CLIENT') private client: MongoClient) {}
 
   async insert(data: MonitorData) {
     return new Promise((resolve, reject) => {
