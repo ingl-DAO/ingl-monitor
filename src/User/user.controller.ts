@@ -54,9 +54,9 @@ export class UserController {
     return newUser;
   }
 
-  @Put(':username/reset')
+  @Put(':email/reset')
   @SetMetadata('isAdmin', true)
-  async resetPassword(@Param('username') username: string) {
+  async resetPassword(@Param('email') email: string) {
     try {
       const resetPassword: ResetPassword = {
         is_used: false,
@@ -65,7 +65,7 @@ export class UserController {
       };
       await this.mongoService.update(
         CollectionName.BetaUsers,
-        { username },
+        { email },
         { resetPassword }
       );
       return resetPassword;

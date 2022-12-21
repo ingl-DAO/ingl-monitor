@@ -11,11 +11,11 @@ export class AuthService {
     private jwtService: JwtService
   ) {}
 
-  async validateUser(username: string, password: string) {
+  async validateUser(email: string, password: string) {
     const user = await this.mongoService.findOne<User>(
       CollectionName.BetaUsers,
       {
-        username,
+        email,
       }
     );
     if (user && bcrypt.compareSync(password, user.password)) {
@@ -27,7 +27,7 @@ export class AuthService {
   }
 
   login(user: User) {
-    const payload = { username: user.username };
+    const payload = { email: user.email };
     return this.jwtService.sign(payload);
   }
 }

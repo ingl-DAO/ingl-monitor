@@ -14,12 +14,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: { username: string; iat: number; exp: number }) {
+  async validate(payload: { email: string; iat: number; exp: number }) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...user } = await this.mongoService.findOne<User>(
       CollectionName.BetaUsers,
       {
-        username: payload.username,
+        email: payload.email,
       }
     );
     return user;

@@ -3,7 +3,7 @@ import { ObjectId } from 'mongodb';
 
 export class UserPostDto {
   @IsEmail()
-  username: string;
+  email: string;
 
   @IsString()
   fullname: string;
