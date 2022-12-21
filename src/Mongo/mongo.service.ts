@@ -46,8 +46,8 @@ export class MongoService {
     return collection.findOne<T>(filter);
   }
 
-  async findAll(collectionName: string) {
+  async findAll<T>(collectionName: string) {
     const collection = this.db.collection(collectionName);
-    return collection.find();
+    return collection.find<T>({}).toArray();
   }
 }
