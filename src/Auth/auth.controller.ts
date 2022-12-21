@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
-import { Post, Req } from '@nestjs/common/decorators';
+import { Body, Post, Req } from '@nestjs/common/decorators';
 import { UseGuards } from '@nestjs/common/decorators/core/use-guards.decorator';
-import { User } from 'src/Mongo/mongo.dto';
+import { User, UserAuthDto } from 'src/Mongo/mongo.dto';
 import { AuthService } from './auth.service';
 import { LocalGuard } from './local/local.guard';
 
@@ -14,5 +14,10 @@ export class AuthController {
   async getUsers(@Req() request) {
     const accessToken = this.authService.login(request.user as User);
     return { access_token: accessToken, user: request.user };
+  }
+
+  @Post('register')
+  async register(@Body() user: UserAuthDto) {
+    return this.authService.signUp(user);
   }
 }

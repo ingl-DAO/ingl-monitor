@@ -1,6 +1,17 @@
 import { IsEmail, IsString } from 'class-validator';
 import { ObjectId } from 'mongodb';
 
+export class UserAuthDto {
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  password: string;
+  
+  @IsString()
+  reset_link: string;
+}
+
 export class UserPostDto {
   @IsEmail()
   email: string;
