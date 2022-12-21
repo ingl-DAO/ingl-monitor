@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { Post, Req } from '@nestjs/common/decorators';
 import { UseGuards } from '@nestjs/common/decorators/core/use-guards.decorator';
-import { User } from 'src/User/user.service';
+import { User } from 'src/Mongo/mongo.dto';
 import { AuthService } from './auth.service';
 import { LocalGuard } from './local/local.guard';
 
