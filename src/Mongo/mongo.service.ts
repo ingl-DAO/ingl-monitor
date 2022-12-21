@@ -1,14 +1,26 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Db } from 'mongodb';
+import { Db, MongoClient } from 'mongodb';
 import { CollectionName } from './mongo.dto';
 
-
+export const MongoDB = {
+  provide: 'MONGO_DB',
+  async useFactory() {
+    return await new Promise<Db>((resolve) =>
+      MongoClient.connect(process.env.MONGO_URI, (error, mongoClient) => {
+        if (error) {
+          console.log(error, this);
+        }
+        resolve(mongoClient.db(process.env.MONGO_DB));
+      })
+    );
+  },
+};
 
 @Injectable()
 export class MongoService {
-  constructor(@Inject('MONGO_CLIENT_DB') private db: Db) {}
+  constructor(@Inject('MONGO_DB') private db: Db) {}
 
-  async insert(collectionName: string, data: Record<string, string>) {
+  async insert(collectionName: string, data: Record<string, string | number>) {
     await this.db.command({ ping: 1 });
     const collection = this.db.collection(collectionName);
     return collection.insertOne(data);
@@ -17,7 +29,7 @@ export class MongoService {
   async update(
     collectionName: string,
     filter: Record<string, string>,
-    data: Record<string, string>
+    data: Record<string, string | number>
   ) {
     await this.db.command({ ping: 1 });
     const collection = this.db.collection(collectionName);
