@@ -2,13 +2,22 @@ import {
   Body,
   Controller,
   Get,
+  HttpException,
+  HttpStatus,
+  Param,
   Post,
+  Put,
   SetMetadata,
   UseGuards,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { JwtAuthGuard } from 'src/Auth/jwt/jwt-auth.guard';
-import { CollectionName, User, UserPostDto } from 'src/Mongo/mongo.dto';
+import {
+  CollectionName,
+  ResetPassword,
+  User,
+  UserPostDto,
+} from 'src/Mongo/mongo.dto';
 import { MongoService } from 'src/Mongo/mongo.service';
 
 @Controller('users')
@@ -41,6 +50,30 @@ export class UserController {
         created_at: new Date().toISOString(),
       },
     };
-    return this.mongoService.insert(CollectionName.BetaUsers, { ...newUser });
+    await this.mongoService.insert(CollectionName.BetaUsers, { ...newUser });
+    return newUser;
+  }
+
+  @Put(':username/reset')
+  @SetMetadata('isAdmin', true)
+  async resetPassword(@Param('username') username: string) {
+    try {
+      const resetPassword: ResetPassword = {
+        is_used: false,
+        reset_link: randomUUID(),
+        created_at: new Date().toISOString(),
+      };
+      await this.mongoService.update(
+        CollectionName.BetaUsers,
+        { username },
+        { resetPassword }
+      );
+      return resetPassword;
+    } catch (error) {
+      throw new HttpException(
+        `Ooops, you're not supposed to see this: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 }

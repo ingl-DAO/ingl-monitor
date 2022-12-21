@@ -16,14 +16,13 @@ export const MongoDB = {
   },
 };
 
+type Column = string | number | object | boolean;
+
 @Injectable()
 export class MongoService {
   constructor(@Inject('MONGO_DB') private db: Db) {}
 
-  async insert(
-    collectionName: string,
-    data: Record<string, string | number | object | boolean>
-  ) {
+  async insert(collectionName: string, data: Record<string, Column>) {
     await this.db.command({ ping: 1 });
     const collection = this.db.collection(collectionName);
     return collection.insertOne(data);
@@ -31,8 +30,8 @@ export class MongoService {
 
   async update(
     collectionName: string,
-    filter: Record<string, string>,
-    data: Record<string, string | number>
+    filter: Record<string, Column>,
+    data: Record<string, Column>
   ) {
     await this.db.command({ ping: 1 });
     const collection = this.db.collection(collectionName);
@@ -43,7 +42,7 @@ export class MongoService {
 
   async findOne<T>(
     collectionName: CollectionName,
-    filter: Record<string, string>
+    filter: Record<string, Column>
   ) {
     const collection = this.db.collection(collectionName);
     return collection.findOne<T>(filter);
