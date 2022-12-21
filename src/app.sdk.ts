@@ -10,9 +10,9 @@ import {
   Dapp,
 } from '@dialectlabs/sdk';
 import { Keypair } from '@solana/web3.js';
-import { CONNECTION_URL } from '../helpers/state';
+import { CONNECTION_URL } from './constants';
 
-export class DialectService {
+export class AppSdk {
   createSdk(): DialectSdk {
     const keypair = Buffer.from(
       JSON.parse(process.env.DIALECT_KEYPAIR as string)
