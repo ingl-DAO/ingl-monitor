@@ -1,6 +1,4 @@
-import { Controller } from '@nestjs/common';
-import { Body, Get, Post, Req } from '@nestjs/common/decorators';
-import { UseGuards } from '@nestjs/common/decorators/core/use-guards.decorator';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { User, UserAuthDto } from 'src/Mongo/mongo.dto';
 import { AuthService } from './auth.service';
@@ -26,6 +24,6 @@ export class AuthController {
   @Get('user')
   @UseGuards(JwtAuthGuard)
   async getUser(@Req() request: Request) {
-    return request.user
+    return request.user;
   }
 }

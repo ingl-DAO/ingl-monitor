@@ -8,7 +8,7 @@ import {
   Post,
   Put,
   SetMetadata,
-  UseGuards,
+  UseGuards
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { JwtAuthGuard } from 'src/Auth/jwt/jwt-auth.guard';
@@ -16,7 +16,7 @@ import {
   CollectionName,
   ResetPassword,
   User,
-  UserPostDto,
+  UserPostDto
 } from 'src/Mongo/mongo.dto';
 import { MongoService } from 'src/Mongo/mongo.service';
 

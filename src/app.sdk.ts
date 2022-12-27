@@ -1,13 +1,9 @@
 import {
-  DialectSdk,
   Backend,
-  ConfigProps,
-  Dialect,
-  DialectWalletAdapterWrapper,
+  ConfigProps, Dapp, Dialect, DialectSdk, DialectWalletAdapterWrapper,
   EncryptionKeysStore,
   NodeDialectWalletAdapter,
-  TokenStore,
-  Dapp,
+  TokenStore
 } from '@dialectlabs/sdk';
 import { Keypair } from '@solana/web3.js';
 import { CONNECTION_URL } from './constants';

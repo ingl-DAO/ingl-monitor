@@ -11,7 +11,7 @@ import {
   INGL_PROGRAM_ID,
   PROPOSAL_KEY,
   VOTE_ACCOUNT_KEY,
-  VOTE_DATA_ACCOUNT_KEY,
+  VOTE_DATA_ACCOUNT_KEY
 } from '../constants';
 
 export const toBytesInt32 = (num: number) => {
