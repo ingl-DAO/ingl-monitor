@@ -9,7 +9,7 @@ export class UserAuthDto {
   password: string;
   
   @IsString()
-  reset_link: string;
+  reset_id: string;
 }
 
 export class UserPostDto {
@@ -21,7 +21,7 @@ export class UserPostDto {
 }
 
 export class ResetPassword {
-  reset_link: string;
+  reset_id: string;
   is_used: boolean;
   created_at: string;
 }

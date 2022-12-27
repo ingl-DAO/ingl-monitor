@@ -46,7 +46,7 @@ export class UserController {
       created_at: new Date().toISOString(),
       resetPassword: {
         is_used: false,
-        reset_link: randomUUID(),
+        reset_id: randomUUID(),
         created_at: new Date().toISOString(),
       },
     };
@@ -60,7 +60,7 @@ export class UserController {
     try {
       const resetPassword: ResetPassword = {
         is_used: false,
-        reset_link: randomUUID(),
+        reset_id: randomUUID(),
         created_at: new Date().toISOString(),
       };
       await this.mongoService.update(

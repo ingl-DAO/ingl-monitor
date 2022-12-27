@@ -31,14 +31,14 @@ export class AuthService {
     return this.jwtService.sign(payload);
   }
 
-  async signUp({ email, password, reset_link }: UserAuthDto) {
+  async signUp({ email, password, reset_id }: UserAuthDto) {
     const user = await this.mongoService.findOne<User>(
       CollectionName.BetaUsers,
       {
         email,
       }
     );
-    if (user && user.resetPassword?.reset_link === reset_link) {
+    if (user && user.resetPassword?.reset_id === reset_id) {
       await this.mongoService.update(
         CollectionName.BetaUsers,
         { email },
