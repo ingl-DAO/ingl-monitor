@@ -11,6 +11,7 @@ import {
   UseGuards
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { ObjectId } from 'mongodb';
 import { JwtAuthGuard } from 'src/Auth/jwt/jwt-auth.guard';
 import {
   CollectionName,
@@ -69,6 +70,23 @@ export class UserController {
         { resetPassword }
       );
       return resetPassword;
+    } catch (error) {
+      throw new HttpException(
+        `Ooops, you're not supposed to see this: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Put(':_id/edit')
+  @SetMetadata('isAdmin', true)
+  async updateUser(@Param('_id') doc_id: string, data: Partial<User>) {
+    try {
+      return this.mongoService.update(
+        CollectionName.BetaUsers,
+        { _id: new ObjectId(doc_id) },
+        data
+      );
     } catch (error) {
       throw new HttpException(
         `Ooops, you're not supposed to see this: ${error.message}`,
