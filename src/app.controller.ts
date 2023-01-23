@@ -16,10 +16,10 @@ export class AppController {
   }
 
   @Get('program-id')
-  getProgramId() {
-    return this.appService.findProgramId();
+  async getProgramId() {
+    return { program_id: await this.appService.findProgramId() };
   }
-  
+
   @Get(':program_id/use')
   useProgramId(@Param('program_id') programId: string) {
     return this.appService.useProgramId(programId);
