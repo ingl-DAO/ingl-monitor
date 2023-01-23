@@ -8,7 +8,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './Auth/auth.module';
 import { MongoModule } from './Mongo/mongo.module';
 import { MongoDB } from './Mongo/mongo.service';
-import { MonitorModule } from './Monitor/monitor.module';
+// import { MonitorModule } from './Monitor/monitor.module';
 import { UserModule } from './User/user.module';
 
 @Module({
@@ -17,7 +17,7 @@ import { UserModule } from './User/user.module';
     UserModule,
     HttpModule,
     MongoModule,
-    MonitorModule,
+    // MonitorModule,
     ConfigModule.forRoot(),
   ],
   controllers: [AppController],
