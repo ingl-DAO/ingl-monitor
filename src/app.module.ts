@@ -1,3 +1,4 @@
+import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
@@ -14,6 +15,7 @@ import { UserModule } from './User/user.module';
   imports: [
     AuthModule,
     UserModule,
+    HttpModule,
     MongoModule,
     MonitorModule,
     ConfigModule.forRoot(),
