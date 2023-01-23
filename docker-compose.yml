@@ -16,4 +16,4 @@ services:
       - SALT=14
       - REGISTRY_PROGRAMS_API_KEY=G0Xk2aLhmwfIKlFgiwPkaOtIOy3hHURe1hvuC4pMlGUloSptWWwTRgOP4KkZtRyO
     ports:
-      - "90:8080"
+      - "88:8080"
