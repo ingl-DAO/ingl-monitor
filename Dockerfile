@@ -6,7 +6,7 @@ RUN rm -rf ./node_modules
 
 # # install app dependencies
 COPY package.json /app
-COPY Package-lock.json /app
+COPY package-lock.json /app
 
 # #clean install dependecies
 RUN npm install
