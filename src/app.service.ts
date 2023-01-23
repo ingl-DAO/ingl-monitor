@@ -2,9 +2,21 @@ import { HttpService } from '@nestjs/axios/dist';
 import { Injectable } from '@nestjs/common';
 
 export const REGISTRY_PROGRAMS_API_KEY =
-  'G0Xk2aLhmwfIKlFgiwPkaOtIOy3hHURe1hvuC4pMlGUloSptWWwTRgOP4KkZtRyO';
+  '';
 @Injectable()
 export class AppService {
+  private readonly headers = {
+    'Content-Type': 'application/json',
+    'api-key': process.env.REGISTRY_PROGRAMS_API_KEY,
+  };
+  private readonly requestBody = {
+    collection: 'program_list',
+    database: 'programs',
+    dataSource: 'Cluster0',
+    filter: {
+      Is_used: false,
+    },
+  };
   constructor(private readonly httpService: HttpService) {}
 
   getData(): { message: string } {
@@ -20,19 +32,9 @@ export class AppService {
       }[];
     }>(
       'https://data.mongodb-api.com/app/data-ywjjx/endpoint/data/v1/action/find',
+      this.requestBody,
       {
-        collection: 'program_list',
-        database: 'programs',
-        dataSource: 'Cluster0',
-        filter: {
-          Is_used: false,
-        },
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'api-key': REGISTRY_PROGRAMS_API_KEY,
-        },
+        headers: this.headers,
       }
     );
     return data.documents;
@@ -47,19 +49,9 @@ export class AppService {
       };
     }>(
       'https://data.mongodb-api.com/app/data-ywjjx/endpoint/data/v1/action/findOne',
+      this.requestBody,
       {
-        collection: 'program_list',
-        database: 'programs',
-        dataSource: 'Cluster0',
-        filter: {
-          Is_used: false,
-        },
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'api-key': REGISTRY_PROGRAMS_API_KEY,
-        },
+        headers: this.headers,
       }
     );
     return data.document?.program;
@@ -75,9 +67,7 @@ export class AppService {
     }>(
       'https://data.mongodb-api.com/app/data-ywjjx/endpoint/data/v1/action/updateOne',
       {
-        collection: 'program_list',
-        database: 'programs',
-        dataSource: 'Cluster0',
+        ...this.requestBody,
         filter: {
           program: programId,
         },
@@ -88,10 +78,7 @@ export class AppService {
         },
       },
       {
-        headers: {
-          'Content-Type': 'application/json',
-          'api-key': REGISTRY_PROGRAMS_API_KEY,
-        },
+        headers: this.headers,
       }
     );
   }
