@@ -38,7 +38,7 @@ export class AppService {
     return data.document?.program;
   }
 
-  async updateProgram(programId: string) {
+  async useProgramId(programId: string) {
     await this.httpService.axiosRef.post<{
       document?: {
         _id: string;
