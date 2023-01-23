@@ -10,9 +10,14 @@ export class AppController {
     return this.appService.getData();
   }
 
-  @Get('permissionless-address')
-  getProgrmas() {
-    return this.appService.getProgramId();
+  @Get('program-list')
+  getPrograms() {
+    return this.appService.findPrograms();
+  }
+
+  @Get('program-id')
+  getProgramId() {
+    return this.appService.findProgramId();
   }
   
   @Get(':program_id/use')
