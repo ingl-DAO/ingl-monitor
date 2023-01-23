@@ -1,8 +1,6 @@
 import { HttpService } from '@nestjs/axios/dist';
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 
-export const REGISTRY_PROGRAMS_API_KEY =
-  '';
 @Injectable()
 export class AppService {
   private readonly headers = {
@@ -17,7 +15,10 @@ export class AppService {
       Is_used: false,
     },
   };
-  constructor(private readonly httpService: HttpService) {}
+  constructor(private readonly httpService: HttpService) {
+    if (!this.headers['api-key'])
+      throw new HttpException('No API key found', HttpStatus.FAILED_DEPENDENCY);
+  }
 
   getData(): { message: string } {
     return { message: 'Welcome to Ingl monitor!' };
