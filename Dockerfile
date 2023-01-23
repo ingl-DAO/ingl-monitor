@@ -24,7 +24,7 @@ RUN npm run build
 EXPOSE 8080
 
 # run app
-WORKDIR /dist
+WORKDIR ./dist
 CMD ["node", "main.js"]
 
 # FROM caddy:2.6.2-alpine
