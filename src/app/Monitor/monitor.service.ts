@@ -1,7 +1,6 @@
 import { deserialize } from '@dao-xyz/borsh';
 import { Injectable, Logger } from '@nestjs/common';
 import { Connection, PublicKey } from '@solana/web3.js';
-import { AppSdk } from 'src/app.sdk';
 import { CollectionName, InglState } from 'src/Mongo/mongo.dto';
 import { MongoService } from 'src/Mongo/mongo.service';
 import {
@@ -11,8 +10,9 @@ import {
   INGL_PROGRAM_ID,
   PROPOSAL_KEY,
   VOTE_ACCOUNT_KEY,
-  VOTE_DATA_ACCOUNT_KEY,
-} from '../constants';
+  VOTE_DATA_ACCOUNT_KEY
+} from '../../state/constants';
+import { AppSdk } from '../app.sdk';
 
 export const toBytesInt32 = (num: number) => {
   const arr = new Uint8Array([

@@ -1,8 +1,8 @@
 import { deserialize } from '@dao-xyz/borsh';
+import { MonitorService } from './monitor.service';
 import { Controller, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { INGL_PROGRAM_ID, ValidatorProposal } from 'src/constants';
-import { MonitorService } from './monitor.service';
+import { INGL_PROGRAM_ID, ValidatorProposal } from '../../state/constants';
 
 @Controller()
 export class MonitorController {

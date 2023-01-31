@@ -6,7 +6,7 @@ import {
   TokenStore
 } from '@dialectlabs/sdk';
 import { Keypair } from '@solana/web3.js';
-import { CONNECTION_URL } from './constants';
+import { CONNECTION_URL } from '../state/constants';
 
 export class AppSdk {
   createSdk(): DialectSdk {

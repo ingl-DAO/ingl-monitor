@@ -17,7 +17,6 @@ import {
   TransactionInstruction
 } from '@solana/web3.js';
 import BN from 'bn.js';
-import { Rarity, RegisterValidatorDto } from './app.dto';
 import {
   COLLECTION_HOLDER_KEY,
   Config,
@@ -30,12 +29,11 @@ import {
   INGL_TEAM_ID,
   Init,
   MAX_PROGRAMS_PER_STORAGE_ACCOUNT,
-  METAPLEX_PROGRAM_ID,
-  Network,
-  toBytesInt32,
+  METAPLEX_PROGRAM_ID, toBytesInt32,
   UploadUris,
   URIS_ACCOUNT_SEED
-} from './state';
+} from '../state';
+import { Rarity, RegisterValidatorDto } from './app.dto';
 
 @Injectable()
 export class AppService {
@@ -52,8 +50,8 @@ export class AppService {
     },
   };
   constructor(
-    private readonly httpService: HttpService,
-    private readonly connection = new Connection(Network)
+    private readonly connection: Connection,
+    private readonly httpService: HttpService
   ) {
     if (!this.headers['api-key'])
       throw new HttpException('No API key found', HttpStatus.FAILED_DEPENDENCY);

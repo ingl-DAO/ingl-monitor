@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
-import { AppSdk } from 'src/app.sdk';
+import { AppSdk } from '../app.sdk';
 import { MonitorController } from './monitor.controller';
 import { ConnectionService, MonitorService } from './monitor.service';
 

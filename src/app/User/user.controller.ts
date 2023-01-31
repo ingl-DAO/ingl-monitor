@@ -12,7 +12,6 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { ObjectId } from 'mongodb';
-import { JwtAuthGuard } from 'src/Auth/jwt/jwt-auth.guard';
 import {
   CollectionName,
   ResetPassword,
@@ -20,6 +19,7 @@ import {
   UserPostDto
 } from 'src/Mongo/mongo.dto';
 import { MongoService } from 'src/Mongo/mongo.service';
+import { JwtAuthGuard } from '../Auth/jwt/jwt-auth.guard';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)

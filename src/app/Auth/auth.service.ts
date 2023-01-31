@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { CollectionName, User, UserAuthDto } from 'src/Mongo/mongo.dto';
-import { MongoService } from '../Mongo/mongo.service';
+import { MongoService } from '../../Mongo/mongo.service';
 
 @Injectable()
 export class AuthService {
