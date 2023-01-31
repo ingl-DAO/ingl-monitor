@@ -1,4 +1,4 @@
-import { deserializeUnchecked } from '@dao-xyz/borsh';
+import { deserialize } from '@dao-xyz/borsh';
 import { Controller, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { INGL_PROGRAM_ID, ValidatorProposal } from 'src/constants';
@@ -46,9 +46,9 @@ export class MonitorController {
       }
 
       if (proposalAccountInfo) {
-        const { date_finalized } = deserializeUnchecked(
-          ValidatorProposal,
-          proposalAccountInfo.data
+        const { date_finalized } = deserialize(
+          proposalAccountInfo.data,
+          ValidatorProposal
         );
         if (date_finalized !== inglDbState.date_finalized) {
           this.logger.log('Proposal Finalized', {

@@ -1,4 +1,4 @@
-import { deserializeUnchecked } from '@dao-xyz/borsh';
+import { deserialize } from '@dao-xyz/borsh';
 import { Injectable, Logger } from '@nestjs/common';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { AppSdk } from 'src/app.sdk';
@@ -11,7 +11,7 @@ import {
   INGL_PROGRAM_ID,
   PROPOSAL_KEY,
   VOTE_ACCOUNT_KEY,
-  VOTE_DATA_ACCOUNT_KEY
+  VOTE_DATA_ACCOUNT_KEY,
 } from '../constants';
 
 export const toBytesInt32 = (num: number) => {
@@ -48,8 +48,10 @@ export class MonitorService {
         global_gem_pubkey
       );
 
-      const { proposal_numeration: current_proposal_numeration } =
-        deserializeUnchecked(GlobalGems, globalGemAccountInfo?.data as Buffer);
+      const { proposal_numeration: current_proposal_numeration } = deserialize(
+        globalGemAccountInfo?.data as Buffer,
+        GlobalGems
+      );
 
       const [vote_account_key] = PublicKey.findProgramAddressSync(
         [
