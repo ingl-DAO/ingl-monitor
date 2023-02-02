@@ -9,7 +9,8 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { RegisterValidatorDto } from './program.dto';
+import { tryPublicKey } from 'src/utils';
+import { RegisterValidatorDto, UploadUrisDto } from './program.dto';
 import { ProgramService } from './program.service';
 
 @Controller('programs')
@@ -32,7 +33,7 @@ export class ProgramController {
   }
 
   @Post('new-validator')
-  async registerNewValidator(
+  async createRegisterValidatorTrans(
     @Body()
     newValidator: RegisterValidatorDto
   ) {
@@ -64,6 +65,25 @@ export class ProgramController {
         'Rarities must sum to 10000',
         HttpStatus.BAD_REQUEST
       );
-    return this.programService.registerValidator(newValidator);
+    try {
+      return this.programService.createRegisterValidatorTrans(newValidator);
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Post(':program_id/upload-uris')
+  async createUploadRaritiesUrisTrans(
+    @Param('program_id') programId: string,
+    @Body() { rarities }: UploadUrisDto
+  ) {
+    try {
+      return this.programService.createUploadRaritiesUrisTrans(
+        tryPublicKey(programId),
+        rarities
+      );
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 }

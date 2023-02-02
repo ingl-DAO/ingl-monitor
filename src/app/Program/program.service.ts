@@ -4,7 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   getAssociatedTokenAddressSync,
-  TOKEN_PROGRAM_ID
+  TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import {
   AccountMeta,
@@ -14,14 +14,14 @@ import {
   PublicKey,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
-  TransactionInstruction
+  Transaction,
+  TransactionInstruction,
 } from '@solana/web3.js';
 import BN from 'bn.js';
 import { Model } from 'mongoose';
 import {
   COLLECTION_HOLDER_KEY,
   Config,
-  forwardLegacyTransaction,
   GENERAL_ACCOUNT_SEED,
   INGL_CONFIG_SEED,
   INGL_MINT_AUTHORITY_KEY,
@@ -33,33 +33,17 @@ import {
   METAPLEX_PROGRAM_ID,
   toBytesInt32,
   UploadUris,
-  URIS_ACCOUNT_SEED
+  URIS_ACCOUNT_SEED,
 } from '../../state';
 import { Rarity, RegisterValidatorDto } from './program.dto';
 import { Program, ProgramDocument } from './program.schema';
 
 @Injectable()
 export class ProgramService {
-  private readonly headers = {
-    'Content-Type': 'application/json',
-    'api-key': process.env.REGISTRY_PROGRAMS_API_KEY,
-  };
-  private readonly requestBody = {
-    collection: 'program_list',
-    database: 'programs',
-    dataSource: 'Cluster0',
-    filter: {
-      Is_used: false,
-    },
-  };
   constructor(
     private readonly connection: Connection,
-    // private readonly httpService: HttpService,
     @InjectModel(Program.name) private programModel: Model<ProgramDocument>
-  ) {
-    if (!this.headers['api-key'])
-      throw new HttpException('No API key found', HttpStatus.FAILED_DEPENDENCY);
-  }
+  ) {}
 
   async findPrograms(filter: { is_used: boolean }): Promise<Program[]> {
     return this.programModel.find(filter).exec();
@@ -102,7 +86,7 @@ export class ProgramService {
     );
   }
 
-  async registerValidator({
+  async createRegisterValidatorTrans({
     validator_id,
     ...newValidator
   }: RegisterValidatorDto) {
@@ -355,56 +339,64 @@ export class ProgramService {
         InglRegistryProgramAccount,
       ],
     });
-    const uploadUrisInstructions = this.createUploadUriInst(
-      programPubkey,
-      [payerAccount, configAccount, urisAccount],
-      rarities
-    );
-    try {
-      const signature = await forwardLegacyTransaction({
-        instructions: [initProgramInstruction],
-        signerKeypairs: [payerKeypair],
-        options: {
-          additionalUnits: 400_000,
-        },
-      });
-      this.useProgramId(programPubkey.toBase58());
-      const upladUriSignatures = await Promise.all(
-        uploadUrisInstructions.map((instruction) =>
-          forwardLegacyTransaction({
-            instructions: [instruction],
-            signerKeypairs: [payerKeypair],
-            options: {
-              additionalUnits: 400_000,
-            },
-          })
-        )
-      );
-      return [signature, ...upladUriSignatures];
-    } catch (error) {
-      throw new HttpException(
-        `Validator program registration failed with the following errors: ${error}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
+    const transaction = new Transaction();
+    transaction.add(initProgramInstruction);
+    transaction.sign(payerKeypair);
+    return transaction;
   }
 
-  createUploadUriInst(
-    programId: PublicKey,
-    accounts: [AccountMeta, AccountMeta, AccountMeta],
-    rarities: Rarity[]
-  ) {
-    return rarities.map(({ rarity, uris }) => {
-      const uploadInst = new UploadUris({
-        uris,
-        rarity,
-        log_level: 0,
-      });
+  async createUploadRaritiesUrisTrans(programId: PublicKey, rarities: Rarity[]) {
+    const programPubkey = new PublicKey(programId);
+
+    const keypairBuffer = Buffer.from(
+      JSON.parse(process.env.BACKEND_KEYPAIR as string)
+    );
+    const payerKeypair = Keypair.fromSecretKey(keypairBuffer);
+
+    const payerAccount: AccountMeta = {
+      pubkey: payerKeypair.publicKey,
+      isSigner: true,
+      isWritable: true,
+    };
+    const [inglConfigKey] = PublicKey.findProgramAddressSync(
+      [Buffer.from(INGL_CONFIG_SEED)],
+      programPubkey
+    );
+    const configAccount: AccountMeta = {
+      pubkey: inglConfigKey,
+      isSigner: false,
+      isWritable: true,
+    };
+    const [urisAccountKey] = PublicKey.findProgramAddressSync(
+      [Buffer.from(URIS_ACCOUNT_SEED)],
+      programPubkey
+    );
+    const urisAccount: AccountMeta = {
+      isSigner: false,
+      isWritable: true,
+      pubkey: urisAccountKey,
+    };
+
+    const uploadUrisInstructions = rarities.map(({ rarity, uris }) => {
       return new TransactionInstruction({
         programId,
-        data: Buffer.from(serialize(uploadInst)),
-        keys: accounts,
+        data: Buffer.from(
+          serialize(
+            new UploadUris({
+              uris,
+              rarity,
+              log_level: 0,
+            })
+          )
+        ),
+        keys: [payerAccount, configAccount, urisAccount],
       });
+    });
+    return uploadUrisInstructions.map((instruction) => {
+      const transaction = new Transaction();
+      transaction.add(instruction);
+      transaction.sign(payerKeypair);
+      return transaction;
     });
   }
 }

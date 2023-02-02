@@ -13,7 +13,26 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-export class RegisterValidatorDto {
+export class Rarity {
+  @IsNumber()
+  rarity: number;
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @Type(() => URL)
+  @IsString({ each: true })
+  uris: string[];
+}
+
+export class UploadUrisDto {
+  @IsArray()
+  @ArrayMinSize(1)
+  @Type(() => Rarity)
+  @ValidateNested({ each: true })
+  rarities: Rarity[];
+}
+
+export class RegisterValidatorDto extends UploadUrisDto {
   @IsBase58()
   validator_id: string;
 
@@ -85,26 +104,9 @@ export class RegisterValidatorDto {
   @IsUrl()
   @Length(32)
   discord_invite: string;
-
-  @IsArray()
-  @ArrayMinSize(1)
-  @Type(() => Rarity)
-  @ValidateNested({ each: true })
-  rarities: Rarity[];
-
+  
   @IsArray()
   @ArrayMinSize(1)
   @IsString({ each: true })
   rarity_names: string[];
-}
-
-export class Rarity {
-  @IsNumber()
-  rarity: number;
-
-  @IsArray()
-  @ArrayMinSize(1)
-  @Type(() => URL)
-  @IsString({ each: true })
-  uris: string[];
 }
