@@ -5,7 +5,7 @@ import {
   HttpStatus,
   Post,
 } from '@nestjs/common';
-import { LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import BN from 'bn.js';
 import { isNumberString, isURL } from 'class-validator';
 import { tryPublicKey } from 'src/utils';
@@ -32,7 +32,10 @@ import { ProposalService } from './proposal.service';
 
 @Controller('proposals')
 export class ProposalController {
-  constructor(private proposalService: ProposalService) {}
+  constructor(
+    private connection: Connection,
+    private proposalService: ProposalService
+  ) {}
 
   @Post('new')
   async createNewProposal(
@@ -47,6 +50,7 @@ export class ProposalController {
       programUpgrade,
     }: CreateProposalDto
   ) {
+    const programId = tryPublicKey(program_id);
     if (!configAccount && !programUpgrade && !voteAccount)
       throw new HttpException(
         'One of the following fields most be provided: `programUpgrade`, `voteAccount` or `configAccount`.',
@@ -75,9 +79,19 @@ export class ProposalController {
       }
     } else if (programUpgrade) {
       const { buffer_account, code_link } = programUpgrade;
-      const bufferAccount = tryPublicKey(buffer_account);
+      const bufferAccountKey = tryPublicKey(buffer_account);
+      const bufferAccount = await this.connection.getAccountInfo(
+        bufferAccountKey
+      );
+      const programAccount = await this.connection.getAccountInfo(programId);
+      //the first 37 bytes of an accountInfo is used to store the account metadata
+      if (bufferAccount?.data.slice(37) !== programAccount?.data.slice(37))
+        throw new HttpException(
+          `The new buffer account version is not compatible with our program version therefore making unsafe`,
+          HttpStatus.NON_AUTHORITATIVE_INFORMATION
+        );
       governanceType = new ProgramUpgrade({
-        buffer_account: bufferAccount.toBuffer(),
+        buffer_account: bufferAccountKey.toBuffer(),
         code_link,
       });
     } else {
@@ -133,7 +147,7 @@ export class ProposalController {
       }
     }
     return this.proposalService.create(
-      tryPublicKey(program_id),
+      programId,
       new InitGovernance({
         title,
         description,
