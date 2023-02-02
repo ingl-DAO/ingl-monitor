@@ -1,14 +1,13 @@
 import { field, fixedArray, variant } from '@dao-xyz/borsh';
-import { PublicKey } from '@solana/web3.js';
-import * as BN from 'bn.js';
+import BN from 'bn.js';
 
-export abstract class GovernanceType {}
-
-@variant(0)
-export class ConfigAccountType extends GovernanceType {}
+export class GovernanceType {}
 
 @variant(0)
-export class MaxPrimaryStake extends ConfigAccountType {
+export class ConfigAccount extends GovernanceType {}
+
+@variant(0)
+export class MaxPrimaryStake extends ConfigAccount {
   @field({ type: 'u64' })
   public value!: BN;
 
@@ -19,7 +18,7 @@ export class MaxPrimaryStake extends ConfigAccountType {
 }
 
 @variant(1)
-export class NftHolderShare extends ConfigAccountType {
+export class NftHolderShare extends ConfigAccount {
   @field({ type: 'u8' })
   public value!: number;
 
@@ -30,7 +29,7 @@ export class NftHolderShare extends ConfigAccountType {
 }
 
 @variant(2)
-export class InitialRedemptionFee extends ConfigAccountType {
+export class InitialRedemptionFee extends ConfigAccount {
   @field({ type: 'u8' })
   public value!: number;
 
@@ -41,7 +40,7 @@ export class InitialRedemptionFee extends ConfigAccountType {
 }
 
 @variant(3)
-export class RedemptionFeeDuration extends ConfigAccountType {
+export class RedemptionFeeDuration extends ConfigAccount {
   @field({ type: 'u8' })
   public value!: number;
 
@@ -51,7 +50,7 @@ export class RedemptionFeeDuration extends ConfigAccountType {
   }
 }
 @variant(4)
-export class ValidatorName extends ConfigAccountType {
+export class ValidatorName extends ConfigAccount {
   @field({ type: 'string' })
   public value!: string;
 
@@ -61,7 +60,7 @@ export class ValidatorName extends ConfigAccountType {
   }
 }
 @variant(5)
-export class TwitterHandle extends ConfigAccountType {
+export class TwitterHandle extends ConfigAccount {
   @field({ type: 'string' })
   public value!: string;
 
@@ -71,7 +70,7 @@ export class TwitterHandle extends ConfigAccountType {
   }
 }
 @variant(6)
-export class DiscordInvite extends ConfigAccountType {
+export class DiscordInvite extends ConfigAccount {
   @field({ type: 'string' })
   public value!: string;
 
@@ -84,7 +83,7 @@ export class DiscordInvite extends ConfigAccountType {
 @variant(1)
 export class ProgramUpgrade extends GovernanceType {
   @field({ type: fixedArray('u8', 32) })
-  public buffer_account!: PublicKey;
+  public buffer_account!: Uint8Array;
 
   @field({ type: 'string' })
   public code_link!: string;
@@ -96,21 +95,21 @@ export class ProgramUpgrade extends GovernanceType {
 }
 
 @variant(2)
-export class VoteAccountGovernance extends GovernanceType {}
+export class VoteAccount extends GovernanceType {}
 
 @variant(0)
-export class ValidatorID extends VoteAccountGovernance {
+export class ValidatorID extends VoteAccount {
   @field({ type: fixedArray('u8', 32) })
-  public value!: PublicKey;
+  public value!: Uint8Array;
 
-  constructor(value: PublicKey) {
+  constructor(value: Uint8Array) {
     super();
     this.value = value;
   }
 }
 
 @variant(1)
-export class Commission extends VoteAccountGovernance {
+export class Commission extends VoteAccount {
   @field({ type: 'u8' })
   public value!: number;
 

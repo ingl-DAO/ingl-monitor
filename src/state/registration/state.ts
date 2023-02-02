@@ -2,8 +2,6 @@ import { field, fixedArray, vec } from '@dao-xyz/borsh';
 import { PublicKey } from '@solana/web3.js';
 import { BN } from 'bn.js';
 
-export const REGISTRY_PROGRAMS_API_KEY =
-  'G0Xk2aLhmwfIKlFgiwPkaOtIOy3hHURe1hvuC4pMlGUloSptWWwTRgOP4KkZtRyO';
 export const REGISTRY_PROGRAMS_API_ID = '63cd5e0fafdfb84e6a0914e4';
 export const VALIDATOR_REGISTRY_PROGRAM_ID = new PublicKey(
   '38pfsot7kCZkrttx1THEDXEz4JJXmCCcaDoDieRtVuy5'

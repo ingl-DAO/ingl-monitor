@@ -4,7 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   getAssociatedTokenAddressSync,
-  TOKEN_PROGRAM_ID,
+  TOKEN_PROGRAM_ID
 } from '@solana/spl-token';
 import {
   AccountMeta,
@@ -14,7 +14,7 @@ import {
   PublicKey,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
-  TransactionInstruction,
+  TransactionInstruction
 } from '@solana/web3.js';
 import BN from 'bn.js';
 import { Model } from 'mongoose';
@@ -33,7 +33,7 @@ import {
   METAPLEX_PROGRAM_ID,
   toBytesInt32,
   UploadUris,
-  URIS_ACCOUNT_SEED,
+  URIS_ACCOUNT_SEED
 } from '../../state';
 import { Rarity, RegisterValidatorDto } from './program.dto';
 import { Program, ProgramDocument } from './program.schema';

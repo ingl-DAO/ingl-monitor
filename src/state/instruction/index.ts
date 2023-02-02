@@ -170,7 +170,7 @@ export class InitGovernance {
   public instruction!: number;
 
   @field({ type: GovernanceType })
-  public governance_tpe!: GovernanceType;
+  public governance_type!: GovernanceType;
 
   @field({ type: 'string' })
   public title!: string;

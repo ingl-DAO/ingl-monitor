@@ -12,6 +12,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 // import { AuthModule } from './Auth/auth.module';
 import { ProgramModule } from './Program/program.module';
+import { ProposalModule } from './Proposal/proposal.module';
 // import { MonitorModule } from './Monitor/monitor.module';
 // import { UserModule } from './User/user.module';
 
@@ -23,6 +24,7 @@ import { ProgramModule } from './Program/program.module';
     // MongoModule,
     // MonitorModule,
     ProgramModule,
+    ProposalModule,
     ConfigModule.forRoot(),
     MongooseModule.forRoot(process.env.MONGO_URI, { dbName: 'programs' }),
   ],
