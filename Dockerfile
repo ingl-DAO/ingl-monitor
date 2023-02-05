@@ -21,7 +21,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # # expose port 8080 to outer environment
-EXPOSE 8080
+EXPOSE 4000
 
 # run app
 WORKDIR ./dist
