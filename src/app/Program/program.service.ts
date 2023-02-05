@@ -89,7 +89,7 @@ export class ProgramService {
   async createRegisterValidatorTrans({
     validator_id,
     ...newValidator
-  }: RegisterValidatorDto) {
+  }: RegisterValidatorDto): Promise<[string, Transaction]> {
     const program = await this.findProgram();
     if (!program)
       throw new HttpException(
@@ -342,10 +342,13 @@ export class ProgramService {
     const transaction = new Transaction();
     transaction.add(initProgramInstruction);
     transaction.sign(payerKeypair);
-    return transaction;
+    return [program.program_id, transaction];
   }
 
-  async createUploadRaritiesUrisTrans(programId: PublicKey, rarities: Rarity[]) {
+  async createUploadRaritiesUrisTrans(
+    programId: PublicKey,
+    rarities: Rarity[]
+  ) {
     const programPubkey = new PublicKey(programId);
 
     const keypairBuffer = Buffer.from(
