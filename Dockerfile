@@ -18,14 +18,11 @@ COPY . /app
 RUN npx prisma generate
 
 # #build backend app
-RUN npm run build
+RUN npx nest build --webpack
 
-# # expose port 3011 to outer environment
+# # expose port 8080 to outer environment
 EXPOSE 8080
 
 # run app
 WORKDIR ./dist
 CMD ["node", "main.js"]
-
-# FROM caddy:2.6.2-alpine
-# COPY --from=builder /app/dist/apps/skeleton-be /usr/share/caddy/html
