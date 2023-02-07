@@ -75,11 +75,12 @@ export class ProgramController {
   @Post(':program_id/upload-uris')
   async createUploadRaritiesUrisTrans(
     @Param('program_id') programId: string,
-    @Body() { rarities }: UploadUrisDto
+    @Body() { payer_id, rarities }: UploadUrisDto
   ) {
     try {
       return this.programService.createUploadRaritiesUrisTrans(
         tryPublicKey(programId),
+        tryPublicKey(payer_id),
         rarities
       );
     } catch (error) {

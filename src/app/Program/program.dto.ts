@@ -7,8 +7,8 @@ import {
   IsNumber,
   IsString,
   IsUrl,
-  Length,
   Max,
+  MaxLength,
   Min,
   ValidateNested,
 } from 'class-validator';
@@ -25,6 +25,9 @@ export class Rarity {
 }
 
 export class UploadUrisDto {
+  @IsBase58()
+  payer_id: string;
+  
   @IsArray()
   @ArrayMinSize(1)
   @Type(() => Rarity)
@@ -33,6 +36,9 @@ export class UploadUrisDto {
 }
 
 export class RegisterValidatorDto extends UploadUrisDto {
+  @IsBase58()
+  payer_id: string;
+
   @IsBase58()
   validator_id: string;
 
@@ -74,7 +80,7 @@ export class RegisterValidatorDto extends UploadUrisDto {
   creator_royalties: number;
 
   @IsString()
-  @Length(32)
+  @MaxLength(32)
   validator_name: string;
 
   @IsUrl()
@@ -86,7 +92,7 @@ export class RegisterValidatorDto extends UploadUrisDto {
   nft_holders_share: number;
 
   @IsUrl()
-  @Length(64)
+  @MaxLength(64)
   website: string;
 
   @IsNumber()
@@ -94,17 +100,16 @@ export class RegisterValidatorDto extends UploadUrisDto {
   governance_expiration_time: number;
 
   @IsUrl()
-  @Length(75)
+  @MaxLength(75)
   default_uri: string;
 
-  @IsUrl()
-  @Length(32)
+  @MaxLength(32)
   twitter_handle: string;
 
   @IsUrl()
-  @Length(32)
+  @MaxLength(32)
   discord_invite: string;
-  
+
   @IsArray()
   @ArrayMinSize(1)
   @IsString({ each: true })

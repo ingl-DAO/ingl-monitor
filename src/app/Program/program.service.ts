@@ -17,7 +17,7 @@ import {
   Transaction,
   TransactionInstruction,
 } from '@solana/web3.js';
-import BN from 'bn.js';
+import { BN } from 'bn.js';
 import { Model } from 'mongoose';
 import {
   COLLECTION_HOLDER_KEY,
@@ -27,7 +27,6 @@ import {
   INGL_MINT_AUTHORITY_KEY,
   INGL_NFT_COLLECTION_KEY,
   INGL_REGISTRY_PROGRAM_ID,
-  INGL_TEAM_ID,
   Init,
   MAX_PROGRAMS_PER_STORAGE_ACCOUNT,
   METAPLEX_PROGRAM_ID,
@@ -87,9 +86,10 @@ export class ProgramService {
   }
 
   async createRegisterValidatorTrans({
+    payer_id,
     validator_id,
     ...newValidator
-  }: RegisterValidatorDto): Promise<[string, Transaction]> {
+  }: RegisterValidatorDto): Promise<[string, Buffer]> {
     const program = await this.findProgram();
     if (!program)
       throw new HttpException(
@@ -101,10 +101,10 @@ export class ProgramService {
     const keypairBuffer = Buffer.from(
       JSON.parse(process.env.BACKEND_KEYPAIR as string)
     );
-    const payerKeypair = Keypair.fromSecretKey(keypairBuffer);
+    const backendKeypair = Keypair.fromSecretKey(keypairBuffer);
 
     const payerAccount: AccountMeta = {
-      pubkey: payerKeypair.publicKey,
+      pubkey: new PublicKey(payer_id),
       isSigner: true,
       isWritable: true,
     };
@@ -263,7 +263,7 @@ export class ProgramService {
       registryConfigKey
     );
     if (!registryAccountInfo)
-      throw Error('Vlidator registration not possible yet.');
+      throw Error('Validator registration not possible yet.');
     const { validation_number } = deserialize(registryAccountInfo.data, Config);
     const storageNumeration = Math.floor(
       validation_number / MAX_PROGRAMS_PER_STORAGE_ACCOUNT
@@ -278,9 +278,9 @@ export class ProgramService {
       isWritable: true,
     };
 
-    const teamAccount: AccountMeta = {
-      pubkey: INGL_TEAM_ID,
-      isSigner: false,
+    const initializerAccount: AccountMeta = {
+      pubkey: backendKeypair.publicKey,
+      isSigner: true,
       isWritable: true,
     };
 
@@ -329,7 +329,7 @@ export class ProgramService {
         systemProgramAccount,
         registryConfigAccount,
         programAccount,
-        teamAccount,
+        initializerAccount,
         storageAccount,
 
         systemProgramAccount,
@@ -340,13 +340,19 @@ export class ProgramService {
       ],
     });
     const transaction = new Transaction();
-    transaction.add(initProgramInstruction);
-    transaction.sign(payerKeypair);
-    return [program.program_id, transaction];
+    const blockhashObj = await this.connection.getLatestBlockhash();
+    transaction.recentBlockhash = blockhashObj.blockhash;
+    transaction.add(initProgramInstruction).feePayer = payerAccount.pubkey;
+    transaction.sign(backendKeypair);
+    return [
+      program.program_id,
+      transaction.serialize({ requireAllSignatures: false }),
+    ];
   }
 
   async createUploadRaritiesUrisTrans(
     programId: PublicKey,
+    feePayer: PublicKey,
     rarities: Rarity[]
   ) {
     const programPubkey = new PublicKey(programId);
@@ -354,10 +360,10 @@ export class ProgramService {
     const keypairBuffer = Buffer.from(
       JSON.parse(process.env.BACKEND_KEYPAIR as string)
     );
-    const payerKeypair = Keypair.fromSecretKey(keypairBuffer);
+    const backendKeypair = Keypair.fromSecretKey(keypairBuffer);
 
     const payerAccount: AccountMeta = {
-      pubkey: payerKeypair.publicKey,
+      pubkey: backendKeypair.publicKey,
       isSigner: true,
       isWritable: true,
     };
@@ -380,26 +386,54 @@ export class ProgramService {
       pubkey: urisAccountKey,
     };
 
-    const uploadUrisInstructions = rarities.map(({ rarity, uris }) => {
-      return new TransactionInstruction({
-        programId,
-        data: Buffer.from(
-          serialize(
-            new UploadUris({
-              uris,
-              rarity,
-              log_level: 0,
-            })
-          )
-        ),
-        keys: [payerAccount, configAccount, urisAccount],
-      });
-    });
-    return uploadUrisInstructions.map((instruction) => {
-      const transaction = new Transaction();
-      transaction.add(instruction);
-      transaction.sign(payerKeypair);
-      return transaction;
-    });
+    const blockhashObj = await this.connection.getLatestBlockhash();
+    return rarities.reduce<Buffer[]>((transactions, { uris }, index) => {
+      let [endIndex] = this.getNextOffset(uris, 800);
+      do {
+        console.log('rarity...', index, endIndex, uris.length);
+        const transaction = new Transaction();
+        transaction.add(
+          new TransactionInstruction({
+            programId,
+            data: Buffer.from(
+              serialize(
+                new UploadUris({
+                  uris: uris.slice(0, endIndex),
+                  rarity: index,
+                  log_level: 0,
+                })
+              )
+            ),
+            keys: [payerAccount, configAccount, urisAccount],
+          })
+        ).feePayer = feePayer;
+        transaction.recentBlockhash = blockhashObj.blockhash;
+        transaction.sign(backendKeypair);
+        transactions.push(
+          transaction.serialize({ requireAllSignatures: false })
+        );
+
+        uris = uris.slice(endIndex);
+        [endIndex] = this.getNextOffset(uris, 800);
+        console.log('rarity !!!', index, endIndex, uris.length);
+      } while (endIndex < uris.length - 1);
+      return transactions;
+    }, []);
+  }
+
+  /**
+   *
+   * @param array
+   * @param max_offset
+   * @returns [offset, accumulated_len]
+   */
+  private getNextOffset(array: string[], max_offset: number) {
+    return array.reduce<[number, number]>(
+      ([p_index, len], uri, index) => {
+        const uriLen = len + Buffer.from(uri).length;
+        return uriLen < max_offset ? [index + 1, uriLen] : [p_index, uriLen];
+      },
+      [0, 0]
+    );
   }
 }
