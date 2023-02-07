@@ -6,11 +6,6 @@ import { Model } from 'mongoose';
 import { tryPublicKey } from 'src/utils';
 import { CreateProgramVersionDto } from './program-version.dto';
 import { ProgramVersion } from './program-version.schema';
-// import { deserialize } from '@dao-xyz/borsh';
-// import {
-//   BufferState,
-//   UpgradeableLoaderState,
-// } from 'src/state/instruction/upgrade';
 
 @Injectable()
 export class ProgramVersionService {
@@ -49,17 +44,6 @@ export class ProgramVersionService {
       tryPublicKey(bufferId)
     );
     if (!bufferAccountInfo.data) return null;
-    // const bufferData = deserialize(
-    //   bufferAccountInfo.data,
-    //   UpgradeableLoaderState,
-    //   { unchecked: false }
-    // );
-    // console.log(bufferData)
-    // if (!(bufferData instanceof BufferState))
-    //   throw new HttpException(
-    //     `The account type must be a buffer, a delineation exists between the sent type and the expected type.`,
-    //     HttpStatus.EXPECTATION_FAILED
-    //   );
     const programVersions = await this.findAll();
     return programVersions.find((programVersion) =>
       bcrypt.compareSync(
