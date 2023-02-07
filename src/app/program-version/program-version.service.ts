@@ -1,11 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Connection } from '@solana/web3.js';
+import * as bcrypt from 'bcrypt';
 import { Model } from 'mongoose';
 import { tryPublicKey } from 'src/utils';
-import { ProgramVersion } from './program-version.schema';
-import * as bcrypt from 'bcrypt';
 import { CreateProgramVersionDto } from './program-version.dto';
+import { ProgramVersion } from './program-version.schema';
+// import { deserialize } from '@dao-xyz/borsh';
+// import {
+//   BufferState,
+//   UpgradeableLoaderState,
+// } from 'src/state/instruction/upgrade';
 
 @Injectable()
 export class ProgramVersionService {
@@ -19,13 +24,18 @@ export class ProgramVersionService {
     return this.programVersionModel.find().exec();
   }
 
+  async findLastestVersion(): Promise<ProgramVersion> {
+    const versions = await this.findAll();
+    return versions.sort((a, b) => a.version - b.version)[0];
+  }
+
   async create({ program_id, status, version }: CreateProgramVersionDto) {
     const programData = await this.connection.getAccountInfo(
       tryPublicKey(program_id)
     );
     const programDataHash = bcrypt.hashSync(
       programData.data.slice(37),
-      process.env.SALT
+      Number(process.env.SALT)
     );
     return this.programVersionModel.create({
       status,
@@ -34,16 +44,28 @@ export class ProgramVersionService {
     });
   }
 
-  async verify(programId: string): Promise<ProgramVersion | null> {
-    const programData = await this.connection.getAccountInfo(
-      tryPublicKey(programId)
+  async verify(bufferId: string): Promise<ProgramVersion | null> {
+    const bufferAccountInfo = await this.connection.getAccountInfo(
+      tryPublicKey(bufferId)
     );
-    const programDataHash = bcrypt.hashSync(programData.data, process.env.SALT);
-    const programVersion = await this.programVersionModel
-      .findOne({
-        program_data_hash: programDataHash.slice(37),
-      })
-      .exec();
-    return programVersion;
+    if (!bufferAccountInfo.data) return null;
+    // const bufferData = deserialize(
+    //   bufferAccountInfo.data,
+    //   UpgradeableLoaderState,
+    //   { unchecked: false }
+    // );
+    // console.log(bufferData)
+    // if (!(bufferData instanceof BufferState))
+    //   throw new HttpException(
+    //     `The account type must be a buffer, a delineation exists between the sent type and the expected type.`,
+    //     HttpStatus.EXPECTATION_FAILED
+    //   );
+    const programVersions = await this.findAll();
+    return programVersions.find((programVersion) =>
+      bcrypt.compareSync(
+        bufferAccountInfo.data.slice(37),
+        programVersion.program_data_hash
+      )
+    );
   }
 }

@@ -44,7 +44,7 @@ export class ProgramService {
     @InjectModel(Program.name) private programModel: Model<ProgramDocument>
   ) {}
 
-  async findPrograms(filter: { is_used: boolean }): Promise<Program[]> {
+  async findPrograms(filter: { is_used?: boolean }): Promise<Program[]> {
     return this.programModel.find(filter).exec();
   }
 
