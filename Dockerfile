@@ -18,10 +18,10 @@ COPY . /app
 RUN npx prisma generate
 
 # #build backend app
-RUN npx nest build --webpack
+RUN npm run build
 
 # # expose port 8080 to outer environment
-EXPOSE 8080
+EXPOSE 4000
 
 # run app
 WORKDIR ./dist
