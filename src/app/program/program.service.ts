@@ -27,6 +27,7 @@ import {
   INGL_MINT_AUTHORITY_KEY,
   INGL_NFT_COLLECTION_KEY,
   INGL_REGISTRY_PROGRAM_ID,
+  INGL_TEAM_ID,
   Init,
   MAX_PROGRAMS_PER_STORAGE_ACCOUNT,
   METAPLEX_PROGRAM_ID,
@@ -278,8 +279,8 @@ export class ProgramService {
       isWritable: true,
     };
 
-    const initializerAccount: AccountMeta = {
-      pubkey: backendKeypair.publicKey,
+    const teamAccount: AccountMeta = {
+      pubkey: INGL_TEAM_ID,
       isSigner: true,
       isWritable: true,
     };
@@ -329,7 +330,7 @@ export class ProgramService {
         systemProgramAccount,
         registryConfigAccount,
         programAccount,
-        initializerAccount,
+        teamAccount,
         storageAccount,
 
         systemProgramAccount,
