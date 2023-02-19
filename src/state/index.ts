@@ -45,6 +45,9 @@ export const INGL_TEAM_ID = new PublicKey(
 export const METAPLEX_PROGRAM_ID = new PublicKey(
   'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s'
 );
+export const BPF_LOADER_UPGRADEABLE_ID = new PublicKey(
+  'BPFLoaderUpgradeab1e11111111111111111111111'
+);
 export const Network: WalletAdapterNetwork = WalletAdapterNetwork.Devnet;
 
 export const INGL_CONFIG_SEED = 'ingl_config';

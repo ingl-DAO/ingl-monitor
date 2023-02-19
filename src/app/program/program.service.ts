@@ -22,6 +22,7 @@ import { Model } from 'mongoose';
 import {
   COLLECTION_HOLDER_KEY,
   Config,
+  BPF_LOADER_UPGRADEABLE_ID,
   GENERAL_ACCOUNT_SEED,
   INGL_CONFIG_SEED,
   INGL_MINT_AUTHORITY_KEY,
@@ -290,6 +291,15 @@ export class ProgramService {
       isSigner: false,
       isWritable: false,
     };
+    const [programDataKey] = PublicKey.findProgramAddressSync(
+      [programPubkey.toBuffer()],
+      BPF_LOADER_UPGRADEABLE_ID
+    );
+    const programDataAccount: AccountMeta = {
+      pubkey: programDataKey,
+      isSigner: false,
+      isWritable: true,
+    };
 
     const {
       unit_backing: solBacking,
@@ -332,6 +342,7 @@ export class ProgramService {
         programAccount,
         teamAccount,
         storageAccount,
+        programDataAccount,
 
         systemProgramAccount,
         splTokenProgramAccount,
