@@ -20,9 +20,9 @@ import {
 import { BN } from 'bn.js';
 import { Model } from 'mongoose';
 import {
+  BPF_LOADER_UPGRADEABLE_ID,
   COLLECTION_HOLDER_KEY,
   Config,
-  BPF_LOADER_UPGRADEABLE_ID,
   GENERAL_ACCOUNT_SEED,
   INGL_CONFIG_SEED,
   INGL_MINT_AUTHORITY_KEY,
@@ -51,29 +51,33 @@ export class ProgramService {
   }
 
   async findProgram() {
-    const programs = await this.findPrograms({ is_used: false });
-    const programAccounts = await Promise.all(
-      programs.map(({ program_id }) =>
-        this.connection.getAccountInfo(new PublicKey(program_id))
-      )
-    );
-    const executablePrograms = programAccounts
-      .map((account, index) => ({ account, program: programs[index] }))
-      .filter(({ account }) => account !== null && account.executable);
+    try {
+      const programs = await this.findPrograms({ is_used: false });
+      const programAccounts = await Promise.all(
+        programs.map(({ program_id }) =>
+          this.connection.getAccountInfo(new PublicKey(program_id))
+        )
+      );
+      const executablePrograms = programAccounts
+        .map((account, index) => ({ account, program: programs[index] }))
+        .filter(({ account }) => account !== null && account.executable);
 
-    //In best case senariors will loop once
-    for (let i = 0; i < executablePrograms.length; i++) {
-      const { program } = executablePrograms[i];
-      const [configAccountKey] = PublicKey.findProgramAddressSync(
-        [Buffer.from(INGL_CONFIG_SEED)],
-        new PublicKey(program.program_id)
-      );
-      const configAccount = await this.connection.getAccountInfo(
-        configAccountKey
-      );
-      if (!configAccount) return program;
+      //In best case senariors will loop once
+      for (let i = 0; i < executablePrograms.length; i++) {
+        const { program } = executablePrograms[i];
+        const [configAccountKey] = PublicKey.findProgramAddressSync(
+          [Buffer.from(INGL_CONFIG_SEED)],
+          new PublicKey(program.program_id)
+        );
+        const configAccount = await this.connection.getAccountInfo(
+          configAccountKey
+        );
+        if (!configAccount) return program;
+      }
+      return null;
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-    return null;
   }
 
   async useProgramId(programId: string) {
@@ -100,10 +104,10 @@ export class ProgramService {
       );
     const programPubkey = new PublicKey(program.program_id);
 
-    const keypairBuffer = Buffer.from(
-      JSON.parse(process.env.BACKEND_KEYPAIR as string)
-    );
-    const backendKeypair = Keypair.fromSecretKey(keypairBuffer);
+    // const keypairBuffer = Buffer.from(
+    //   JSON.parse(process.env.BACKEND_KEYPAIR as string)
+    // );
+    // const backendKeypair = Keypair.fromSecretKey(keypairBuffer);
 
     const payerAccount: AccountMeta = {
       pubkey: new PublicKey(payer_id),
@@ -282,7 +286,7 @@ export class ProgramService {
 
     const teamAccount: AccountMeta = {
       pubkey: INGL_TEAM_ID,
-      isSigner: true,
+      isSigner: false,
       isWritable: true,
     };
 
@@ -298,7 +302,7 @@ export class ProgramService {
     const programDataAccount: AccountMeta = {
       pubkey: programDataKey,
       isSigner: false,
-      isWritable: true,
+      isWritable: false,
     };
 
     const {
@@ -355,7 +359,6 @@ export class ProgramService {
     const blockhashObj = await this.connection.getLatestBlockhash();
     transaction.recentBlockhash = blockhashObj.blockhash;
     transaction.add(initProgramInstruction).feePayer = payerAccount.pubkey;
-    transaction.sign(backendKeypair);
     return [
       program.program_id,
       transaction.serialize({ requireAllSignatures: false }),
@@ -375,7 +378,7 @@ export class ProgramService {
     const backendKeypair = Keypair.fromSecretKey(keypairBuffer);
 
     const payerAccount: AccountMeta = {
-      pubkey: backendKeypair.publicKey,
+      pubkey: feePayer,
       isSigner: true,
       isWritable: true,
     };
