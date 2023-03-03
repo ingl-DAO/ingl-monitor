@@ -3,8 +3,8 @@ import { HydratedDocument } from 'mongoose';
 
 export type ProgramDocument = HydratedDocument<Program>;
 
-enum ProgramUsage {
-  VersionStatus = 'VersionStatus',
+export enum ProgramUsage {
+  Maketplace = 'Maketplace',
   Permissionless = 'Permissionless',
 }
 

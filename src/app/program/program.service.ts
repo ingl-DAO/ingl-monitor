@@ -37,7 +37,7 @@ import {
   URIS_ACCOUNT_SEED,
 } from '../../state';
 import { Rarity, RegisterValidatorDto } from './program.dto';
-import { Program, ProgramDocument } from './program.schema';
+import { Program, ProgramDocument, ProgramUsage } from './program.schema';
 
 @Injectable()
 export class ProgramService {
@@ -46,13 +46,16 @@ export class ProgramService {
     @InjectModel(Program.name) private programModel: Model<ProgramDocument>
   ) {}
 
-  async findPrograms(filter: { is_used?: boolean }): Promise<Program[]> {
+  async findPrograms(filter: {
+    is_used?: boolean;
+    usage?: ProgramUsage;
+  }): Promise<Program[]> {
     return this.programModel.find(filter).exec();
   }
 
-  async findProgram() {
+  async findProgram(usage: ProgramUsage) {
     try {
-      const programs = await this.findPrograms({ is_used: false });
+      const programs = await this.findPrograms({ is_used: false, usage });
       const programAccounts = await Promise.all(
         programs.map(({ program_id }) =>
           this.connection.getAccountInfo(new PublicKey(program_id))
@@ -96,7 +99,7 @@ export class ProgramService {
     validator_id,
     ...newValidator
   }: RegisterValidatorDto): Promise<[string, Buffer]> {
-    const program = await this.findProgram();
+    const program = await this.findProgram(ProgramUsage.Permissionless);
     if (!program)
       throw new HttpException(
         'No predeployed program available',
