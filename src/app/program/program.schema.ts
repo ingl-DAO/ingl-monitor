@@ -3,6 +3,11 @@ import { HydratedDocument } from 'mongoose';
 
 export type ProgramDocument = HydratedDocument<Program>;
 
+enum ProgramUsage {
+  VersionStatus = 'VersionStatus',
+  Permissionless = 'Permissionless',
+}
+
 @Schema({
   collection: 'program_list',
 })
@@ -12,6 +17,13 @@ export class Program {
     required: true,
   })
   program_id: string;
+
+  @Prop({
+    required: true,
+    enum: ProgramUsage,
+    default: ProgramUsage.Permissionless,
+  })
+  usage: ProgramUsage;
 
   @Prop({
     type: Boolean,
