@@ -8,21 +8,21 @@ import { BetaAccess } from './beta-access.schema';
 export class BetaAccessService {
   constructor(
     @InjectModel(BetaAccess.name)
-    private programVersionModel: Model<BetaAccess>
+    private betaAccessModel: Model<BetaAccess>
   ) {}
 
   async getAccess(
     usage: ProgramUsage,
     accessCode: string
   ): Promise<BetaAccess> {
-    return this.programVersionModel.findOne({
+    return this.betaAccessModel.findOne({
       accessCode,
       usage,
     });
   }
 
   async findOne(baseUrl: string): Promise<BetaAccess | null> {
-    return this.programVersionModel.findOne({
+    return this.betaAccessModel.findOne({
       baseUrl,
     });
   }

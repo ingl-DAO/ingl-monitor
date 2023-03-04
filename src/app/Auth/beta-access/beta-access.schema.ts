@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 import { ProgramUsage } from '../../program/program.schema';
 
-export type ProgramDocument = HydratedDocument<BetaAccess>;
+export type BetaAccessDocument = HydratedDocument<BetaAccess>;
 
 @Schema({
   collection: 'ingl_beta_access',
@@ -35,4 +35,4 @@ export class BetaAccess {
   localUrl: string;
 }
 
-export const ProgramVersionSchema = SchemaFactory.createForClass(BetaAccess);
+export const BetaAccessSchema = SchemaFactory.createForClass(BetaAccess);

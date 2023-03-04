@@ -11,14 +11,14 @@ import { AppController } from './app.controller';
 // import { AppSdk } from './app.sdk';
 import { AppService } from './app.service';
 import { ProgramVersionModule } from './program-version/program-version.module';
-// import { AuthModule } from './Auth/auth.module';
+import { AuthModule } from './Auth/auth.module';
 import { ProgramModule } from './program/program.module';
 // import { MonitorModule } from './Monitor/monitor.module';
 // import { UserModule } from './User/user.module';
 
 @Module({
   imports: [
-    // AuthModule,
+    AuthModule,
     // UserModule,
     HttpModule,
     // MongoModule,
