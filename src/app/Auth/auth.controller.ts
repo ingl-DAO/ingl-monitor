@@ -1,7 +1,7 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
-import { User, UserAuthDto } from 'src/Mongo/mongo.dto';
 import { AuthService } from './auth.service';
+import { BetaAccess } from './beta-access/beta-access.schema';
 import { JwtAuthGuard } from './jwt/jwt-auth.guard';
 import { LocalGuard } from './local/local.guard';
 
@@ -11,14 +11,9 @@ export class AuthController {
 
   @Post('sign-in')
   @UseGuards(LocalGuard)
-  async getUsers(@Req() request: Request) {
-    const accessToken = this.authService.login(request.user as User);
-    return { access_token: accessToken, user: request.user };
-  }
-
-  @Post('register')
-  async register(@Body() user: UserAuthDto) {
-    return this.authService.signUp(user);
+  async singIn(@Req() request: Request) {
+    const accessToken = this.authService.signIn(request.user as BetaAccess);
+    return { access_token: accessToken };
   }
 
   @Get('user')
