@@ -4,14 +4,15 @@ import {
   IsArray,
   IsBase58,
   IsBoolean,
-  IsNumber,
-  IsString,
+  IsEnum,
+  IsNumber, IsString,
   IsUrl,
   Max,
   MaxLength,
   Min,
-  ValidateNested,
+  ValidateNested
 } from 'class-validator';
+import { ProgramUsage } from './program.schema';
 
 export class Rarity {
   @IsNumber()
@@ -27,7 +28,7 @@ export class Rarity {
 export class UploadUrisDto {
   @IsBase58()
   payer_id: string;
-  
+
   @IsArray()
   @ArrayMinSize(1)
   @Type(() => Rarity)
@@ -114,4 +115,9 @@ export class RegisterValidatorDto extends UploadUrisDto {
   @ArrayMinSize(1)
   @IsString({ each: true })
   rarity_names: string[];
+}
+
+export class QueryDto {
+  @IsEnum(ProgramUsage)
+  usage: ProgramUsage;
 }

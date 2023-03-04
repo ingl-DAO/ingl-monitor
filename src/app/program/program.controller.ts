@@ -10,7 +10,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { tryPublicKey } from 'src/utils';
-import { RegisterValidatorDto, UploadUrisDto } from './program.dto';
+import { QueryDto, RegisterValidatorDto, UploadUrisDto } from './program.dto';
 import { ProgramService } from './program.service';
 
 @Controller('programs')
@@ -23,8 +23,8 @@ export class ProgramController {
   }
 
   @Get('available')
-  async getProgram() {
-    return { program_id: await this.programService.findProgram() };
+  async getProgram(@Query() { usage }: QueryDto) {
+    return { program_id: await this.programService.findProgram(usage) };
   }
 
   @Put(':program_id/use')
