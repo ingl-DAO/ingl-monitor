@@ -1,12 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { CollectionName, User } from 'src/Mongo/mongo.dto';
-import { MongoService } from 'src/Mongo/mongo.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private mongoService: MongoService) {
+  constructor() {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: process.env.SECRET_KEY,
@@ -14,14 +12,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: { email: string; iat: number; exp: number }) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...user } = await this.mongoService.findOne<User>(
-      CollectionName.BetaUsers,
-      {
-        email: payload.email,
-      }
-    );
-    return user;
+  async validate(payload: unknown) {
+    return {
+      usage: payload['usage'],
+      baseUrl: payload['baseUrl'],
+      localUrl: payload['localUrl'],
+    };
   }
 }
