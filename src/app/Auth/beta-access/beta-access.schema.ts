@@ -30,7 +30,7 @@ export class BetaAccess {
   @Prop({
     type: String,
     required: true,
-    default: 'http://localhost:4200',
+    default: 'http://localhost:4201',
   })
   localUrl: string;
 }
