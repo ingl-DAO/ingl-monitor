@@ -16,7 +16,7 @@ export class AuthController {
     return { access_token: accessToken };
   }
 
-  @Get('user')
+  @Get('verify')
   @UseGuards(JwtAuthGuard)
   async getUser(@Req() request: Request) {
     return request.user;
