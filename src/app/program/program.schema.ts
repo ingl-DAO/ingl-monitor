@@ -4,7 +4,7 @@ import { HydratedDocument } from 'mongoose';
 export type ProgramDocument = HydratedDocument<Program>;
 
 export enum ProgramUsage {
-  Maketplace = 'Maketplace',
+  Marketplace = 'Marketplace',
   Permissionless = 'Permissionless',
 }
 
