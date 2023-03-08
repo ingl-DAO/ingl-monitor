@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Connection } from '@solana/web3.js';
 import * as bcrypt from 'bcrypt';
@@ -40,16 +40,23 @@ export class ProgramVersionService {
   }
 
   async verify(bufferId: string): Promise<ProgramVersion | null> {
-    const bufferAccountInfo = await this.connection.getAccountInfo(
-      tryPublicKey(bufferId)
-    );
-    if (!bufferAccountInfo.data) return null;
-    const programVersions = await this.findAll();
-    return programVersions.find((programVersion) =>
-      bcrypt.compareSync(
-        bufferAccountInfo.data.slice(37),
-        programVersion.program_data_hash
-      )
-    );
+    try {
+      const bufferAccountInfo = await this.connection.getAccountInfo(
+        tryPublicKey(bufferId)
+      );
+      if (!bufferAccountInfo.data) return null;
+      const programVersions = await this.findAll();
+      return programVersions.find((programVersion) =>
+        bcrypt.compareSync(
+          bufferAccountInfo.data.slice(37),
+          programVersion.program_data_hash
+        )
+      );
+    } catch (error) {
+      throw new HttpException(
+        `Sorry, something went wrong. ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 }
