@@ -9,6 +9,7 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
+import { Keypair, Transaction } from '@solana/web3.js';
 import { tryPublicKey } from 'src/utils';
 import { QueryDto, RegisterValidatorDto, UploadUrisDto } from './program.dto';
 import { ProgramService } from './program.service';
@@ -24,7 +25,9 @@ export class ProgramController {
 
   @Get('available')
   async getProgram(@Query() { usage }: QueryDto) {
-    return { program_id: await this.programService.findProgram(usage) };
+    return {
+      program_id: (await this.programService.findProgram(usage)).program_id,
+    };
   }
 
   @Put(':program_id/use')
@@ -86,5 +89,16 @@ export class ProgramController {
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  @Post('sign-transaction')
+  async signTransaction(@Body() serializedTransaction: Buffer) {
+    const transaction = Transaction.from(serializedTransaction);
+    const keypairBuffer = Buffer.from(
+      JSON.parse(process.env.BACKEND_KEYPAIR as string)
+    );
+    const backendKeypair = Keypair.fromSecretKey(keypairBuffer);
+    transaction.sign(backendKeypair);
+    return transaction;
   }
 }
