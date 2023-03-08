@@ -1,13 +1,13 @@
 import {
+  Body,
   Controller,
   Get,
-  Put,
-  Param,
-  Query,
-  Post,
-  Body,
   HttpException,
   HttpStatus,
+  Param,
+  Post,
+  Put,
+  Query,
 } from '@nestjs/common';
 import { Keypair, Transaction } from '@solana/web3.js';
 import { tryPublicKey } from 'src/utils';
@@ -92,13 +92,22 @@ export class ProgramController {
   }
 
   @Post('sign-transaction')
-  async signTransaction(@Body() serializedTransaction: Buffer) {
-    const transaction = Transaction.from(serializedTransaction);
-    const keypairBuffer = Buffer.from(
-      JSON.parse(process.env.BACKEND_KEYPAIR as string)
-    );
-    const backendKeypair = Keypair.fromSecretKey(keypairBuffer);
-    transaction.sign(backendKeypair);
-    return transaction;
+  async signTransaction(
+    @Body('transaction') serializedTransaction: { data: Buffer }
+  ) {
+    try {
+      const transaction = Transaction.from(serializedTransaction.data);
+      const keypairBuffer = Buffer.from(
+        JSON.parse(process.env.BACKEND_KEYPAIR as string)
+      );
+      const backendKeypair = Keypair.fromSecretKey(keypairBuffer);
+      transaction.sign(backendKeypair);
+      return transaction.serialize({ requireAllSignatures: false });
+    } catch (error) {
+      throw new HttpException(
+        `Sorry, something when wrong: ${error?.message || 'Unexpected error'}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 }
