@@ -405,38 +405,42 @@ export class ProgramService {
     };
 
     const blockhashObj = await this.connection.getLatestBlockhash();
-    return rarities.reduce<Buffer[]>((transactions, { uris }, index) => {
-      let [endIndex] = this.getNextOffset(uris, 800);
-      do {
-        console.log('rarity...', index, endIndex, uris.length);
-        const transaction = new Transaction();
-        transaction.add(
-          new TransactionInstruction({
-            programId,
-            data: Buffer.from(
-              serialize(
-                new UploadUris({
-                  uris: uris.slice(0, endIndex),
-                  rarity: index,
-                  log_level: 0,
-                })
-              )
-            ),
-            keys: [payerAccount, configAccount, urisAccount],
-          })
-        ).feePayer = feePayer;
-        transaction.recentBlockhash = blockhashObj.blockhash;
-        transaction.sign(backendKeypair);
-        transactions.push(
-          transaction.serialize({ requireAllSignatures: false })
-        );
+    try {
+      return rarities.reduce<Buffer[]>((transactions, { uris }, index) => {
+        let [endIndex] = this.getNextOffset(uris, 800);
+        do {
+          console.log('rarity...', index, endIndex, uris.length);
+          const transaction = new Transaction();
+          transaction.add(
+            new TransactionInstruction({
+              programId,
+              data: Buffer.from(
+                serialize(
+                  new UploadUris({
+                    uris: uris.slice(0, endIndex),
+                    rarity: index,
+                    log_level: 0,
+                  })
+                )
+              ),
+              keys: [payerAccount, configAccount, urisAccount],
+            })
+          ).feePayer = feePayer;
+          transaction.recentBlockhash = blockhashObj.blockhash;
+          transaction.sign(backendKeypair);
+          transactions.push(
+            transaction.serialize({ requireAllSignatures: false })
+          );
 
-        uris = uris.slice(endIndex);
-        [endIndex] = this.getNextOffset(uris, 800);
-        console.log('rarity !!!', index, endIndex, uris.length);
-      } while (endIndex < uris.length - 1);
-      return transactions;
-    }, []);
+          uris = uris.slice(endIndex);
+          [endIndex] = this.getNextOffset(uris, 800);
+          console.log('rarity !!!', index, endIndex, uris.length);
+        } while (endIndex < uris.length - 1);
+        return transactions;
+      }, []);
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   /**
