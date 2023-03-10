@@ -240,3 +240,26 @@ export class ExecuteGovernance {
     Object.assign(this, properties);
   }
 }
+
+export class InjectTestingData {
+  @field({ type: 'u8' })
+  public instruction!: number;
+
+  @field({ type: 'u8' })
+  public num_mints!: number;
+
+  @field({ type: 'u8' })
+  public log_level!: number;
+
+  constructor(properties: Omit<ExecuteGovernance, 'instruction'>) {
+    this.instruction = 17;
+    Object.assign(this, properties);
+  }
+}
+
+export class FractionlzedExisting extends Init {
+  constructor(propreties: Omit<FractionlzedExisting, 'instruction'>) {
+    super(propreties);
+    this.instruction = 18;
+  }
+}
