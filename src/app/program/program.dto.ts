@@ -5,12 +5,14 @@ import {
   IsBase58,
   IsBoolean,
   IsEnum,
-  IsNumber, IsString,
+  IsNumber,
+  IsOptional,
+  IsString,
   IsUrl,
   Max,
   MaxLength,
   Min,
-  ValidateNested
+  ValidateNested,
 } from 'class-validator';
 import { ProgramUsage } from './program.schema';
 
@@ -41,7 +43,12 @@ export class RegisterValidatorDto extends UploadUrisDto {
   payer_id: string;
 
   @IsBase58()
-  validator_id: string;
+  @IsOptional()
+  validator_id?: string;
+
+  @IsBase58()
+  @IsOptional()
+  vote_account_id?: string;
 
   @Min(65)
   @Max(100)
