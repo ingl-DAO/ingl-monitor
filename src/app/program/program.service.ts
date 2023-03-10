@@ -1,4 +1,4 @@
-import { deserialize, serialize } from '@dao-xyz/borsh';
+import { serialize } from '@dao-xyz/borsh';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import {
@@ -16,13 +16,15 @@ import {
   SYSVAR_RENT_PUBKEY,
   Transaction,
   TransactionInstruction,
+  VoteProgram,
 } from '@solana/web3.js';
 import { BN } from 'bn.js';
 import { Model } from 'mongoose';
 import {
+  AUTHORIZED_WITHDRAWER_KEY,
   BPF_LOADER_UPGRADEABLE_ID,
   COLLECTION_HOLDER_KEY,
-  Config,
+  FractionlzedExisting,
   GENERAL_ACCOUNT_SEED,
   INGL_CONFIG_SEED,
   INGL_MINT_AUTHORITY_KEY,
@@ -30,9 +32,7 @@ import {
   INGL_REGISTRY_PROGRAM_ID,
   INGL_TEAM_ID,
   Init,
-  MAX_PROGRAMS_PER_STORAGE_ACCOUNT,
   METAPLEX_PROGRAM_ID,
-  toBytesInt32,
   UploadUris,
   URIS_ACCOUNT_SEED,
 } from '../../state';
@@ -97,6 +97,7 @@ export class ProgramService {
   async createRegisterValidatorTrans({
     payer_id,
     validator_id,
+    vote_account_id,
     ...newValidator
   }: RegisterValidatorDto): Promise<[string, Buffer]> {
     const program = await this.findProgram(ProgramUsage.Permissionless);
@@ -107,22 +108,53 @@ export class ProgramService {
       );
     const programPubkey = new PublicKey(program.program_id);
 
-    // const keypairBuffer = Buffer.from(
-    //   JSON.parse(process.env.BACKEND_KEYPAIR as string)
-    // );
-    // const backendKeypair = Keypair.fromSecretKey(keypairBuffer);
-
     const payerAccount: AccountMeta = {
       pubkey: new PublicKey(payer_id),
       isSigner: true,
       isWritable: true,
     };
 
-    const validatorAccount: AccountMeta = {
-      pubkey: new PublicKey(validator_id),
-      isWritable: false,
-      isSigner: false,
-    };
+    let validatorAccount: AccountMeta;
+    const existingValidatorAccounts: AccountMeta[] = [];
+
+    if (validator_id) {
+      validatorAccount = {
+        pubkey: new PublicKey(validator_id),
+        isWritable: false,
+        isSigner: false,
+      };
+    } else {
+      const voteAccountKey = new PublicKey(vote_account_id);
+      const voteAccountInfo = await this.connection.getAccountInfo(
+        voteAccountKey
+      );
+      //The first four bytes are used to represent the vote account version
+      const validatorId = new PublicKey(voteAccountInfo.data.slice(4, 36));
+      const authorizedWithdrawer = new PublicKey(
+        voteAccountInfo.data.slice(36, 68)
+      );
+      if (authorizedWithdrawer.toBase58() !== payerAccount.pubkey.toBase58())
+        throw new HttpException(
+          'The authorized withdrawer must be the payer',
+          HttpStatus.BAD_REQUEST
+        );
+      const [pdaAuthorityKey] = PublicKey.findProgramAddressSync(
+        [Buffer.from(AUTHORIZED_WITHDRAWER_KEY)],
+        programPubkey
+      );
+      existingValidatorAccounts.push(
+        payerAccount,
+        { pubkey: pdaAuthorityKey, isSigner: false, isWritable: false },
+        { pubkey: voteAccountKey, isSigner: false, isWritable: true },
+        { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false }
+      );
+
+      validatorAccount = {
+        pubkey: validatorId,
+        isWritable: false,
+        isSigner: false,
+      };
+    }
 
     const [inglConfigKey] = PublicKey.findProgramAddressSync(
       [Buffer.from(INGL_CONFIG_SEED)],
@@ -259,31 +291,32 @@ export class ProgramService {
       isSigner: false,
       isWritable: false,
     };
-    const [registryConfigKey] = PublicKey.findProgramAddressSync(
-      [Buffer.from('config')],
+    const [nameStorageKey] = PublicKey.findProgramAddressSync(
+      [Buffer.from('name_storage')],
       INGL_REGISTRY_PROGRAM_ID
     );
-    const registryConfigAccount: AccountMeta = {
-      pubkey: registryConfigKey,
+    const nameStorageAccount: AccountMeta = {
+      pubkey: nameStorageKey,
       isSigner: false,
       isWritable: true,
     };
-    const registryAccountInfo = await this.connection.getAccountInfo(
-      registryConfigKey
-    );
-    if (!registryAccountInfo)
-      throw Error('Validator registration not possible yet.');
-    const { validation_number } = deserialize(registryAccountInfo.data, Config);
-    const storageNumeration = Math.floor(
-      validation_number / MAX_PROGRAMS_PER_STORAGE_ACCOUNT
-    );
     const [storageKey] = PublicKey.findProgramAddressSync(
-      [Buffer.from('storage'), toBytesInt32(storageNumeration)],
+      [Buffer.from('storage')],
       INGL_REGISTRY_PROGRAM_ID
     );
     const storageAccount: AccountMeta = {
       pubkey: storageKey,
       isSigner: false,
+      isWritable: true,
+    };
+
+    const keypairBuffer = Buffer.from(
+      JSON.parse(process.env.BACKEND_KEYPAIR as string)
+    );
+    const backendKeypair = Keypair.fromSecretKey(keypairBuffer);
+    const upgradeAuthorityAccount: AccountMeta = {
+      pubkey: backendKeypair.publicKey,
+      isSigner: true,
       isWritable: true,
     };
 
@@ -307,6 +340,11 @@ export class ProgramService {
       isSigner: false,
       isWritable: false,
     };
+    const voteProgramAccount: AccountMeta = {
+      pubkey: VoteProgram.programId,
+      isSigner: false,
+      isWritable: false,
+    };
 
     const {
       unit_backing: solBacking,
@@ -318,7 +356,9 @@ export class ProgramService {
     } = newValidator;
 
     const log_level = 0;
-    const initProgramPayload = new Init({
+    const initProgramPayload = new (
+      vote_account_id ? FractionlzedExisting : Init
+    )({
       log_level,
       ...registratioData,
       rarities: rarities.map((_) => _.rarity),
@@ -345,12 +385,17 @@ export class ProgramService {
         collectionEditionAccount,
         splTokenProgramAccount,
         systemProgramAccount,
-        registryConfigAccount,
+        programDataAccount,
+        upgradeAuthorityAccount,
+
+        ...existingValidatorAccounts,
+
         programAccount,
         teamAccount,
         storageAccount,
-        programDataAccount,
+        nameStorageAccount,
 
+        ...(vote_account_id ? [voteProgramAccount] : []),
         systemProgramAccount,
         splTokenProgramAccount,
         associatedTokeProgramAccount,
@@ -362,6 +407,7 @@ export class ProgramService {
     const blockhashObj = await this.connection.getLatestBlockhash();
     transaction.recentBlockhash = blockhashObj.blockhash;
     transaction.add(initProgramInstruction).feePayer = payerAccount.pubkey;
+    transaction.sign(backendKeypair);
     return [
       program.program_id,
       transaction.serialize({ requireAllSignatures: false }),
@@ -381,7 +427,7 @@ export class ProgramService {
     const backendKeypair = Keypair.fromSecretKey(keypairBuffer);
 
     const payerAccount: AccountMeta = {
-      pubkey: feePayer,
+      pubkey: backendKeypair.publicKey,
       isSigner: true,
       isWritable: true,
     };
