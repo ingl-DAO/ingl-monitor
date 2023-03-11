@@ -4,15 +4,13 @@ import {
   IsArray,
   IsBase58,
   IsBoolean,
-  IsEnum,
-  IsNumber,
-  IsOptional,
+  IsEnum, IsNumber,
   IsString,
   IsUrl,
   Max,
   MaxLength,
   Min,
-  ValidateNested,
+  ValidateNested
 } from 'class-validator';
 import { ProgramUsage } from './program.schema';
 
@@ -38,17 +36,25 @@ export class UploadUrisDto {
   rarities: Rarity[];
 }
 
+export class AccountMetaDto {
+  @IsBase58()
+  pubkey: string;
+
+  @IsBoolean()
+  isSigner: boolean;
+
+  @IsBoolean()
+  isWritable: boolean;
+}
 export class RegisterValidatorDto extends UploadUrisDto {
   @IsBase58()
   payer_id: string;
 
   @IsBase58()
-  @IsOptional()
-  validator_id?: string;
+  program_id: string;
 
-  @IsBase58()
-  @IsOptional()
-  vote_account_id?: string;
+  @IsBoolean()
+  has_vote_account: boolean;
 
   @Min(65)
   @Max(100)
@@ -122,6 +128,16 @@ export class RegisterValidatorDto extends UploadUrisDto {
   @ArrayMinSize(1)
   @IsString({ each: true })
   rarity_names: string[];
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @Type(() => AccountMetaDto)
+  accounts: AccountMetaDto[];
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsString({ each: true })
+  lookupTableAddresses: string[];
 }
 
 export class QueryDto {

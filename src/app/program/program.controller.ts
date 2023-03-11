@@ -35,7 +35,7 @@ export class ProgramController {
     return this.programService.useProgramId(programId);
   }
 
-  @Post('new-validator')
+  @Post('validate-create')
   async createRegisterValidatorTrans(
     @Body()
     newValidator: RegisterValidatorDto
@@ -47,18 +47,7 @@ export class ProgramController {
       max_primary_stake,
       initial_redemption_fee,
       is_validator_id_switchable,
-
-      validator_id,
-      vote_account_id,
     } = newValidator;
-    if (
-      (!validator_id && !vote_account_id) ||
-      (validator_id && vote_account_id)
-    )
-      throw new HttpException(
-        'Please only provide a vote account key in case you have one, otherwise send your validator account key.',
-        HttpStatus.BAD_REQUEST
-      );
     if (!is_validator_id_switchable && initial_redemption_fee !== 0)
       throw new HttpException(
         'Validator id must be switchable if there exists any redemption fee',

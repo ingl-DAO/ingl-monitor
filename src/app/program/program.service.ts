@@ -2,37 +2,24 @@ import { serialize } from '@dao-xyz/borsh';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import {
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-  getAssociatedTokenAddressSync,
-  TOKEN_PROGRAM_ID,
-} from '@solana/spl-token';
-import {
   AccountMeta,
+  AddressLookupTableAccount,
+  ComputeBudgetProgram,
   Connection,
   Keypair,
   LAMPORTS_PER_SOL,
   PublicKey,
-  SystemProgram,
-  SYSVAR_RENT_PUBKEY,
   Transaction,
   TransactionInstruction,
-  VoteProgram,
+  TransactionMessage,
+  VersionedTransaction,
 } from '@solana/web3.js';
 import { BN } from 'bn.js';
 import { Model } from 'mongoose';
 import {
-  AUTHORIZED_WITHDRAWER_KEY,
-  BPF_LOADER_UPGRADEABLE_ID,
-  COLLECTION_HOLDER_KEY,
   FractionlzedExisting,
-  GENERAL_ACCOUNT_SEED,
   INGL_CONFIG_SEED,
-  INGL_MINT_AUTHORITY_KEY,
-  INGL_NFT_COLLECTION_KEY,
-  INGL_REGISTRY_PROGRAM_ID,
-  INGL_TEAM_ID,
   Init,
-  METAPLEX_PROGRAM_ID,
   UploadUris,
   URIS_ACCOUNT_SEED,
 } from '../../state';
@@ -96,255 +83,16 @@ export class ProgramService {
 
   async createRegisterValidatorTrans({
     payer_id,
-    validator_id,
-    vote_account_id,
+    program_id,
+    has_vote_account,
+    accounts,
+
+    lookupTableAddresses,
+
     ...newValidator
-  }: RegisterValidatorDto): Promise<[string, Buffer]> {
-    const program = await this.findProgram(ProgramUsage.Permissionless);
-    if (!program)
-      throw new HttpException(
-        'No predeployed program available',
-        HttpStatus.EXPECTATION_FAILED
-      );
-    const programPubkey = new PublicKey(program.program_id);
-
-    const payerAccount: AccountMeta = {
-      pubkey: new PublicKey(payer_id),
-      isSigner: true,
-      isWritable: true,
-    };
-
-    let validatorAccount: AccountMeta;
-    const existingValidatorAccounts: AccountMeta[] = [];
-
-    if (validator_id) {
-      validatorAccount = {
-        pubkey: new PublicKey(validator_id),
-        isWritable: false,
-        isSigner: false,
-      };
-    } else {
-      const voteAccountKey = new PublicKey(vote_account_id);
-      const voteAccountInfo = await this.connection.getAccountInfo(
-        voteAccountKey
-      );
-      //The first four bytes are used to represent the vote account version
-      const validatorId = new PublicKey(voteAccountInfo.data.slice(4, 36));
-      const authorizedWithdrawer = new PublicKey(
-        voteAccountInfo.data.slice(36, 68)
-      );
-      if (authorizedWithdrawer.toBase58() !== payerAccount.pubkey.toBase58())
-        throw new HttpException(
-          'The authorized withdrawer must be the payer',
-          HttpStatus.BAD_REQUEST
-        );
-      const [pdaAuthorityKey] = PublicKey.findProgramAddressSync(
-        [Buffer.from(AUTHORIZED_WITHDRAWER_KEY)],
-        programPubkey
-      );
-      existingValidatorAccounts.push(
-        payerAccount,
-        { pubkey: pdaAuthorityKey, isSigner: false, isWritable: false },
-        { pubkey: voteAccountKey, isSigner: false, isWritable: true },
-        { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false }
-      );
-
-      validatorAccount = {
-        pubkey: validatorId,
-        isWritable: false,
-        isSigner: false,
-      };
-    }
-
-    const [inglConfigKey] = PublicKey.findProgramAddressSync(
-      [Buffer.from(INGL_CONFIG_SEED)],
-      programPubkey
-    );
-    const configAccount: AccountMeta = {
-      pubkey: inglConfigKey,
-      isSigner: false,
-      isWritable: true,
-    };
-    const [urisAccountKey] = PublicKey.findProgramAddressSync(
-      [Buffer.from(URIS_ACCOUNT_SEED)],
-      programPubkey
-    );
-    const urisAccount: AccountMeta = {
-      isSigner: false,
-      isWritable: true,
-      pubkey: urisAccountKey,
-    };
-
-    const [inglNftCollectionMintKey] = PublicKey.findProgramAddressSync(
-      [Buffer.from(INGL_NFT_COLLECTION_KEY)],
-      programPubkey
-    );
-
-    const collectionMintAccount: AccountMeta = {
-      pubkey: inglNftCollectionMintKey,
-      isSigner: false,
-      isWritable: true,
-    };
-
-    const [collectionAutorityKey] = PublicKey.findProgramAddressSync(
-      [Buffer.from(INGL_MINT_AUTHORITY_KEY)],
-      programPubkey
-    );
-
-    const mintAuthorityAccount: AccountMeta = {
-      pubkey: collectionAutorityKey,
-      isSigner: false,
-      isWritable: true,
-    };
-
-    const splTokenProgramAccount: AccountMeta = {
-      pubkey: TOKEN_PROGRAM_ID,
-      isSigner: false,
-      isWritable: false,
-    };
-
-    const sysvarRentAccount: AccountMeta = {
-      pubkey: SYSVAR_RENT_PUBKEY,
-      isSigner: false,
-      isWritable: false,
-    };
-
-    const systemProgramAccount: AccountMeta = {
-      pubkey: SystemProgram.programId,
-      isSigner: false,
-      isWritable: false,
-    };
-
-    const [metaplexAccountKey] = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from('metadata'),
-        METAPLEX_PROGRAM_ID.toBuffer(),
-        collectionMintAccount.pubkey.toBuffer(),
-      ],
-      METAPLEX_PROGRAM_ID
-    );
-
-    const collectionMetadataAccount: AccountMeta = {
-      pubkey: metaplexAccountKey,
-      isSigner: false,
-      isWritable: true,
-    };
-
-    const [generalAccountPubkey] = PublicKey.findProgramAddressSync(
-      [Buffer.from(GENERAL_ACCOUNT_SEED)],
-      programPubkey
-    );
-
-    const generalAccount: AccountMeta = {
-      pubkey: generalAccountPubkey,
-      isSigner: false,
-      isWritable: true,
-    };
-
-    const metaplexProgramAccount: AccountMeta = {
-      pubkey: METAPLEX_PROGRAM_ID,
-      isSigner: false,
-      isWritable: false,
-    };
-
-    const [inglCollectionHolderKey] = PublicKey.findProgramAddressSync(
-      [Buffer.from(COLLECTION_HOLDER_KEY)],
-      programPubkey
-    );
-    const collectionHolderAccount: AccountMeta = {
-      pubkey: inglCollectionHolderKey,
-      isSigner: false,
-      isWritable: true,
-    };
-    const associatedTokenAccount: AccountMeta = {
-      pubkey: getAssociatedTokenAddressSync(
-        inglNftCollectionMintKey,
-        inglCollectionHolderKey,
-        true
-      ),
-      isSigner: false,
-      isWritable: true,
-    };
-
-    const [editionKey] = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from('metadata'),
-        METAPLEX_PROGRAM_ID.toBuffer(),
-        inglNftCollectionMintKey.toBuffer(),
-        Buffer.from('edition'),
-      ],
-      METAPLEX_PROGRAM_ID
-    );
-    const collectionEditionAccount: AccountMeta = {
-      pubkey: editionKey,
-      isSigner: false,
-      isWritable: true,
-    };
-
-    const associatedTokeProgramAccount: AccountMeta = {
-      pubkey: ASSOCIATED_TOKEN_PROGRAM_ID,
-      isSigner: false,
-      isWritable: false,
-    };
-    const InglRegistryProgramAccount: AccountMeta = {
-      pubkey: INGL_REGISTRY_PROGRAM_ID,
-      isSigner: false,
-      isWritable: false,
-    };
-    const [nameStorageKey] = PublicKey.findProgramAddressSync(
-      [Buffer.from('name_storage')],
-      INGL_REGISTRY_PROGRAM_ID
-    );
-    const nameStorageAccount: AccountMeta = {
-      pubkey: nameStorageKey,
-      isSigner: false,
-      isWritable: true,
-    };
-    const [storageKey] = PublicKey.findProgramAddressSync(
-      [Buffer.from('storage')],
-      INGL_REGISTRY_PROGRAM_ID
-    );
-    const storageAccount: AccountMeta = {
-      pubkey: storageKey,
-      isSigner: false,
-      isWritable: true,
-    };
-
-    const keypairBuffer = Buffer.from(
-      JSON.parse(process.env.BACKEND_KEYPAIR as string)
-    );
-    const backendKeypair = Keypair.fromSecretKey(keypairBuffer);
-    const upgradeAuthorityAccount: AccountMeta = {
-      pubkey: backendKeypair.publicKey,
-      isSigner: true,
-      isWritable: true,
-    };
-
-    const teamAccount: AccountMeta = {
-      pubkey: INGL_TEAM_ID,
-      isSigner: false,
-      isWritable: true,
-    };
-
-    const programAccount: AccountMeta = {
-      pubkey: programPubkey,
-      isSigner: false,
-      isWritable: false,
-    };
-    const [programDataKey] = PublicKey.findProgramAddressSync(
-      [programPubkey.toBuffer()],
-      BPF_LOADER_UPGRADEABLE_ID
-    );
-    const programDataAccount: AccountMeta = {
-      pubkey: programDataKey,
-      isSigner: false,
-      isWritable: false,
-    };
-    const voteProgramAccount: AccountMeta = {
-      pubkey: VoteProgram.programId,
-      isSigner: false,
-      isWritable: false,
-    };
+  }: RegisterValidatorDto) {
+    const programPubkey = new PublicKey(program_id);
+    const payerAccountKey = new PublicKey(payer_id);
 
     const {
       unit_backing: solBacking,
@@ -355,9 +103,9 @@ export class ProgramService {
       ...registratioData
     } = newValidator;
 
-    const log_level = 0;
+    const log_level = 5;
     const initProgramPayload = new (
-      vote_account_id ? FractionlzedExisting : Init
+      has_vote_account ? FractionlzedExisting : Init
     )({
       log_level,
       ...registratioData,
@@ -371,47 +119,51 @@ export class ProgramService {
       programId: programPubkey,
       data: Buffer.from(serialize(initProgramPayload)),
       keys: [
-        payerAccount,
-        configAccount,
-        generalAccount,
-        urisAccount,
-        sysvarRentAccount,
-        validatorAccount,
-        collectionHolderAccount,
-        collectionMintAccount,
-        mintAuthorityAccount,
-        associatedTokenAccount,
-        collectionMetadataAccount,
-        collectionEditionAccount,
-        splTokenProgramAccount,
-        systemProgramAccount,
-        programDataAccount,
-        upgradeAuthorityAccount,
-
-        ...existingValidatorAccounts,
-
-        programAccount,
-        teamAccount,
-        storageAccount,
-        nameStorageAccount,
-
-        ...(vote_account_id ? [voteProgramAccount] : []),
-        systemProgramAccount,
-        splTokenProgramAccount,
-        associatedTokeProgramAccount,
-        metaplexProgramAccount,
-        InglRegistryProgramAccount,
+        ...accounts.map((account) => ({
+          ...account,
+          pubkey: new PublicKey(account.pubkey),
+        })),
       ],
     });
-    const transaction = new Transaction();
-    const blockhashObj = await this.connection.getLatestBlockhash();
-    transaction.recentBlockhash = blockhashObj.blockhash;
-    transaction.add(initProgramInstruction).feePayer = payerAccount.pubkey;
-    transaction.sign(backendKeypair);
-    return [
-      program.program_id,
-      transaction.serialize({ requireAllSignatures: false }),
-    ];
+    try {
+      const lookupTableAccounts: AddressLookupTableAccount[] = [];
+      for (let i = 0; i < lookupTableAddresses.length; i++) {
+        const lookupTableAccount = await this.connection
+          .getAddressLookupTable(new PublicKey(lookupTableAddresses[i]))
+          .then((res) => res.value);
+        if (lookupTableAccount) lookupTableAccounts.push(lookupTableAccount);
+        else throw new Error(`Sorry, No Lookup table was found`);
+      }
+
+      const additionalComputeBudgetInstruction =
+        ComputeBudgetProgram.setComputeUnitLimit({
+          units: 300_000,
+        });
+
+      const blockhashObj = await this.connection.getLatestBlockhash();
+      const messageV0 = new TransactionMessage({
+        recentBlockhash: blockhashObj.blockhash,
+        payerKey: payerAccountKey,
+        instructions: [
+          additionalComputeBudgetInstruction,
+          initProgramInstruction,
+        ],
+      }).compileToV0Message(lookupTableAccounts);
+      const transactionV0 = new VersionedTransaction(messageV0);
+
+      const keypairBuffer = Buffer.from(
+        JSON.parse(process.env.BACKEND_KEYPAIR as string)
+      );
+      const backendKeypair = Keypair.fromSecretKey(keypairBuffer);
+      transactionV0.sign([backendKeypair]);
+      return {
+        transaction: transactionV0.serialize(),
+        blockhashObj,
+      };
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async createUploadRaritiesUrisTrans(

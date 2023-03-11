@@ -40,7 +40,7 @@ export const INGL_REGISTRY_PROGRAM_ID = new PublicKey(
   '38pfsot7kCZkrttx1THEDXEz4JJXmCCcaDoDieRtVuy5'
 );
 export const INGL_TEAM_ID = new PublicKey(
-  'CG8hjsXNBSSSRqbC8HLzoKJ9mHZA7LxJcBuJiDSCjQJj'
+  'Et2tm6NsfBZJbEYXtWTv9k51V4tWtQvufexSgXoDRGVA'
 );
 export const METAPLEX_PROGRAM_ID = new PublicKey(
   'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s'
