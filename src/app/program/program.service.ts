@@ -65,7 +65,10 @@ export class ProgramService {
         );
         if (!configAccount) return program;
       }
-      return null;
+      throw new HttpException(
+        'Sorry !!! No deployed program was found. For more information contact us on our discord channel.',
+        HttpStatus.NOT_FOUND
+      );
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
