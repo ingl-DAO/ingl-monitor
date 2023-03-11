@@ -9,6 +9,7 @@ import {
   Keypair,
   LAMPORTS_PER_SOL,
   PublicKey,
+  SystemProgram,
   Transaction,
   TransactionInstruction,
   TransactionMessage,
@@ -173,15 +174,20 @@ export class ProgramService {
   ) {
     const programPubkey = new PublicKey(programId);
 
+    const payerAccount: AccountMeta = {
+      pubkey: feePayer,
+      isSigner: true,
+      isWritable: true,
+    };
+
     const keypairBuffer = Buffer.from(
       JSON.parse(process.env.BACKEND_KEYPAIR as string)
     );
     const backendKeypair = Keypair.fromSecretKey(keypairBuffer);
-
-    const payerAccount: AccountMeta = {
+    const uploadAuthority: AccountMeta = {
       pubkey: backendKeypair.publicKey,
       isSigner: true,
-      isWritable: true,
+      isWritable: false,
     };
     const [inglConfigKey] = PublicKey.findProgramAddressSync(
       [Buffer.from(INGL_CONFIG_SEED)],
@@ -201,42 +207,63 @@ export class ProgramService {
       isWritable: true,
       pubkey: urisAccountKey,
     };
+    const systemProgramAccount: AccountMeta = {
+      pubkey: SystemProgram.programId,
+      isSigner: false,
+      isWritable: false,
+    };
 
     const blockhashObj = await this.connection.getLatestBlockhash();
     try {
-      return rarities.reduce<Buffer[]>((transactions, { uris }, index) => {
-        let [endIndex] = this.getNextOffset(uris, 800);
-        do {
-          console.log('rarity...', index, endIndex, uris.length);
-          const transaction = new Transaction();
-          transaction.add(
-            new TransactionInstruction({
-              programId,
-              data: Buffer.from(
-                serialize(
-                  new UploadUris({
-                    uris: uris.slice(0, endIndex),
-                    rarity: index,
-                    log_level: 0,
-                  })
-                )
-              ),
-              keys: [payerAccount, configAccount, urisAccount],
-            })
-          ).feePayer = feePayer;
-          transaction.recentBlockhash = blockhashObj.blockhash;
-          transaction.sign(backendKeypair);
-          transactions.push(
-            transaction.serialize({ requireAllSignatures: false })
-          );
+      return rarities.reduce<{ transaction: Buffer; rarity: number }[]>(
+        (transactions, { uris }, index) => {
+          let [endIndex] = this.getNextOffset(uris, 800);
+          do {
+            const transaction = new Transaction();
+            transaction.add(
+              ComputeBudgetProgram.setComputeUnitLimit({
+                units: 1_400_000,
+              }),
+              new TransactionInstruction({
+                programId,
+                data: Buffer.from(
+                  serialize(
+                    new UploadUris({
+                      uris: uris.slice(0, endIndex),
+                      rarity: index,
+                      log_level: 0,
+                    })
+                  )
+                ),
+                keys: [
+                  payerAccount,
+                  configAccount,
+                  urisAccount,
+                  uploadAuthority,
+                  systemProgramAccount,
+                ],
+              })
+            ).feePayer = payerAccount.pubkey;
+            transaction.recentBlockhash = blockhashObj.blockhash;
+            transaction.lastValidBlockHeight =
+              blockhashObj.lastValidBlockHeight;
+            transaction.sign(backendKeypair);
+            transactions.push({
+              rarity: index,
+              transaction: transaction.serialize({
+                requireAllSignatures: false,
+              }),
+            });
 
-          uris = uris.slice(endIndex);
-          [endIndex] = this.getNextOffset(uris, 800);
-          console.log('rarity !!!', index, endIndex, uris.length);
-        } while (endIndex < uris.length - 1);
-        return transactions;
-      }, []);
+            uris = uris.slice(endIndex);
+            [endIndex] = this.getNextOffset(uris, 800);
+          } while (endIndex < uris.length - 1);
+          return transactions;
+        },
+        []
+      );
     } catch (error) {
+      console.log(error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
