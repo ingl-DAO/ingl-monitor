@@ -1,10 +1,17 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Connection } from '@solana/web3.js';
+import { Connection, PublicKey } from '@solana/web3.js';
 import * as bcrypt from 'bcrypt';
+import { createHash } from 'crypto';
 import { Model } from 'mongoose';
+import { BPF_LOADER_UPGRADEABLE_ID } from 'src/state';
 import { tryPublicKey } from 'src/utils';
-import { CreateProgramVersionDto } from './program-version.dto';
+import { ProgramUsage } from '../program/program.schema';
+import {
+  BpfType,
+  CreateProgramVersionDto,
+  ProgramVersionQueryDto,
+} from './program-version.dto';
 import { ProgramVersion } from './program-version.schema';
 
 @Injectable()
@@ -15,16 +22,24 @@ export class ProgramVersionService {
     private programVersionModel: Model<ProgramVersion>
   ) {}
 
-  async findAll(): Promise<ProgramVersion[]> {
-    return this.programVersionModel.find().exec();
+  async findAll(usage?: ProgramUsage): Promise<ProgramVersion[]> {
+    return this.programVersionModel.find({ usage }).exec();
+  }
+  async findOne(filter: Partial<ProgramVersion>): Promise<ProgramVersion> {
+    return this.programVersionModel.findOne(filter);
   }
 
-  async findLastestVersion(): Promise<ProgramVersion> {
-    const versions = await this.findAll();
+  async findLastestVersion(usage: ProgramUsage): Promise<ProgramVersion> {
+    const versions = await this.findAll(usage);
     return versions.sort((a, b) => a.version - b.version)[0];
   }
 
-  async create({ program_id, status, version }: CreateProgramVersionDto) {
+  async create({
+    program_id,
+    status,
+    version,
+    usage,
+  }: CreateProgramVersionDto) {
     const programData = await this.connection.getAccountInfo(
       tryPublicKey(program_id)
     );
@@ -33,25 +48,53 @@ export class ProgramVersionService {
       Number(process.env.SALT)
     );
     return this.programVersionModel.create({
+      usage,
       status,
       version,
       program_data_hash: programDataHash,
     });
   }
 
-  async verify(bufferId: string): Promise<ProgramVersion | null> {
+  async verify({
+    account_type,
+    program_id,
+    usage,
+  }: ProgramVersionQueryDto): Promise<ProgramVersion | null> {
     try {
+      let programDataAddress: PublicKey = tryPublicKey(program_id);
+      if (account_type === BpfType.Program) {
+        [programDataAddress] = PublicKey.findProgramAddressSync(
+          [tryPublicKey(program_id).toBuffer()],
+          BPF_LOADER_UPGRADEABLE_ID
+        );
+      }
       const bufferAccountInfo = await this.connection.getAccountInfo(
-        tryPublicKey(bufferId)
+        programDataAddress
       );
       if (!bufferAccountInfo.data) return null;
-      const programVersions = await this.findAll();
-      return programVersions.find((programVersion) =>
-        bcrypt.compareSync(
-          bufferAccountInfo.data.slice(37),
-          programVersion.program_data_hash
+      //   pub enum UpgradeableLoaderState {
+      //     Uninitialized,
+      //     Buffer {
+      //         authority_address: Option<Pubkey>,
+      //        //prodram data here (37)
+      //     },
+      //     Program {
+      //         programdata_address: Pubkey,
+      //     },
+      //     ProgramData {
+      //         slot: u64,
+      //         upgrade_authority_address: Option<Pubkey>,
+      //        //prodram data here(44)
+      //     },
+      // }
+      const dataHash = createHash('sha256')
+        .update(
+          account_type === BpfType.Buffer
+            ? bufferAccountInfo.data.slice(37)
+            : bufferAccountInfo.data.slice(44)
         )
-      );
+        .digest('hex');
+      return this.findOne({ program_data_hash: dataHash, usage });
     } catch (error) {
       throw new HttpException(
         `Sorry, something went wrong. ${error.message}`,

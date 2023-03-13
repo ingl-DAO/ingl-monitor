@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { ProgramUsage } from '../program/program.schema';
 import { VersionStatus } from './program-version.dto';
 
 export type ProgramDocument = HydratedDocument<ProgramVersion>;
@@ -25,6 +26,12 @@ export class ProgramVersion {
     enum: VersionStatus,
   })
   status: VersionStatus;
+
+  @Prop({
+    required: true,
+    enum: ProgramUsage,
+  })
+  usage: ProgramUsage;
 
   @Prop({
     type: Date,
