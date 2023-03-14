@@ -34,5 +34,5 @@ export class ProgramVersionQueryDto {
   program_id: string;
 
   @IsEnum(BpfType)
-  account_type: BpfType;
+  bpfType: BpfType;
 }

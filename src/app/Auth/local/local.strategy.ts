@@ -18,7 +18,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
   async validate(usage: string, accessCode: string) {
     if (!isEnum(usage, ProgramUsage))
       throw new HttpException(
-        `usage must either be ${ProgramUsage.Marketplace} or ${ProgramUsage.Permissionless}`,
+        `usage must either be ${ProgramUsage.Marketplace} or ${ProgramUsage.PermissionlessValidator}`,
         HttpStatus.BAD_REQUEST
       );
     const user = await this.authService.validateCode(

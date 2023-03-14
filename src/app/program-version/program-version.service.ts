@@ -56,13 +56,13 @@ export class ProgramVersionService {
   }
 
   async verify({
-    account_type,
+    bpfType,
     program_id,
     usage,
   }: ProgramVersionQueryDto): Promise<ProgramVersion | null> {
     try {
       let programDataAddress: PublicKey = tryPublicKey(program_id);
-      if (account_type === BpfType.Program) {
+      if (bpfType === BpfType.Program) {
         [programDataAddress] = PublicKey.findProgramAddressSync(
           [tryPublicKey(program_id).toBuffer()],
           BPF_LOADER_UPGRADEABLE_ID
@@ -89,7 +89,7 @@ export class ProgramVersionService {
       // }
       const dataHash = createHash('sha256')
         .update(
-          account_type === BpfType.Buffer
+          bpfType === BpfType.Buffer
             ? bufferAccountInfo.data.slice(37)
             : bufferAccountInfo.data.slice(44)
         )

@@ -5,7 +5,7 @@ export type ProgramDocument = HydratedDocument<Program>;
 
 export enum ProgramUsage {
   Marketplace = 'Marketplace',
-  Permissionless = 'Permissionless',
+  PermissionlessValidator = 'PermissionlessValidator',
 }
 
 @Schema({
@@ -21,7 +21,7 @@ export class Program {
   @Prop({
     required: true,
     enum: ProgramUsage,
-    default: ProgramUsage.Permissionless,
+    default: ProgramUsage.PermissionlessValidator,
   })
   usage: ProgramUsage;
 
