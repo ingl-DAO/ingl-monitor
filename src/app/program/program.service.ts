@@ -21,6 +21,8 @@ import {
   FractionalizedExisting as FractionalizedExisting,
   INGL_CONFIG_SEED,
   Init,
+  MARKETPLACE_STORAGE_SEED,
+  REGISTRY_PROGRAM_ID,
   UploadUris,
   URIS_ACCOUNT_SEED,
 } from '../../state';
@@ -56,12 +58,18 @@ export class ProgramService {
       //In best case senariors will loop once
       for (let i = 0; i < executablePrograms.length; i++) {
         const { program } = executablePrograms[i];
-        const [configAccountKey] = PublicKey.findProgramAddressSync(
-          [Buffer.from(INGL_CONFIG_SEED)],
-          new PublicKey(program.program_id)
-        );
+        const [programConfigkey] =
+          usage === ProgramUsage.Marketplace
+            ? PublicKey.findProgramAddressSync(
+                [Buffer.from(MARKETPLACE_STORAGE_SEED)],
+                REGISTRY_PROGRAM_ID
+              )
+            : PublicKey.findProgramAddressSync(
+                [Buffer.from(INGL_CONFIG_SEED)],
+                new PublicKey(program.program_id)
+              );
         const configAccount = await this.connection.getAccountInfo(
-          configAccountKey
+          programConfigkey
         );
         if (!configAccount) return program;
       }
