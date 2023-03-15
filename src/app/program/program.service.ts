@@ -18,7 +18,7 @@ import {
 import { BN } from 'bn.js';
 import { Model } from 'mongoose';
 import {
-  FractionlzedExisting,
+  FractionalizedExisting as FractionalizedExisting,
   INGL_CONFIG_SEED,
   Init,
   UploadUris,
@@ -107,9 +107,9 @@ export class ProgramService {
       ...registratioData
     } = newValidator;
 
-    const log_level = 5;
+    const log_level = 0;
     const initProgramPayload = new (
-      has_vote_account ? FractionlzedExisting : Init
+      has_vote_account ? FractionalizedExisting : Init
     )({
       log_level,
       ...registratioData,

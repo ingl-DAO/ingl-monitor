@@ -257,8 +257,8 @@ export class InjectTestingData {
   }
 }
 
-export class FractionlzedExisting extends Init {
-  constructor(propreties: Omit<FractionlzedExisting, 'instruction'>) {
+export class FractionalizedExisting extends Init {
+  constructor(propreties: Omit<FractionalizedExisting, 'instruction'>) {
     super(propreties);
     this.instruction = 18;
   }
